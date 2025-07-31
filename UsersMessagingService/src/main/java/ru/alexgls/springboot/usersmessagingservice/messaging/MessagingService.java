@@ -1,0 +1,36 @@
+package ru.alexgls.springboot.usersmessagingservice.messaging;
+
+import ru.alexgls.springboot.usersmessagingservice.dto.CreateMessagePayload;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Service;
+
+import java.security.Principal;
+import java.util.concurrent.CompletableFuture;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class MessagingService {
+
+    private final SimpMessagingTemplate messagingTemplate;
+    private final KafkaTemplate<String, CreateMessagePayload> createMessageKafkaTemplate;
+
+    public void sendMessage(ChatMessage message, Principal principal) {
+        log.info("Sending message to user {}: {}", message.getToUserId(), message.getContent());
+        messagingTemplate.convertAndSendToUser(message.getToUserId(), "/queue/messages", message);
+        log.info("Try to send message to kafka: {}", message);
+        CreateMessagePayload payload = new CreateMessagePayload(null, Integer.parseInt(principal.getName()), Integer.parseInt(message.getToUserId()), message.getContent());
+        CompletableFuture<SendResult<String, CreateMessagePayload>> futureResult = createMessageKafkaTemplate.send("messaging-topic", payload).toCompletableFuture();
+        futureResult.whenComplete((result, throwable) -> {
+            if (throwable == null) {
+                log.info("Message sent to kafka: {}", result);
+            } else {
+                log.error("Error sending message {}", throwable.getMessage());
+            }
+        });
+    }
+}

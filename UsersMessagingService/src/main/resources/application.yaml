@@ -1,0 +1,21 @@
+server:
+  port: 8086
+
+spring:
+  kafka:
+    bootstrap-servers: localhost:29092
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:8085/.well-known/jwks.json
+
+frontend:
+  url: http://localhost:8090
+
+services:
+  auth-service: http://localhost:8085
+
+logging:
+  level:
+    org.springframework.security: DEBUG

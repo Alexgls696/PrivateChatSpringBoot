@@ -1,0 +1,27 @@
+jwt:
+  secret: 4eaee43cfe4d9d08e6391dab67baf143
+  expiration: 900000 # 15 мин
+  refresh:
+    expirationMs: 3600000 #1 час
+
+server:
+  port: 8085
+frontend:
+  url: http://localhost:8090
+
+spring:
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5435/security_users_db
+    username: alexgls
+    password: AS04SERa1
+
+  liquibase:
+    url: jdbc:postgresql://localhost:5435/security_users_db
+    user: alexgls
+    password: AS04SERa1
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:8085/.well-known/jwks.json
