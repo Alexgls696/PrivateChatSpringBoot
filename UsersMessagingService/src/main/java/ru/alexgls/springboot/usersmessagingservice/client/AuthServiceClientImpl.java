@@ -21,7 +21,22 @@ public class AuthServiceClientImpl implements AuthServiceClient {
                     .body(new JwtValidationRequest(token))
                     .retrieve()
                     .body(JwtValidationResponse.class);
-        }catch (Exception e) {
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    @Override
+    public String findUserInitialsById(int id, String token) {
+        try {
+            return restClient
+                    .get()
+                    .uri("/users/{id}", id)
+                    .header("Authorization", "Bearer " + token)
+                    .retrieve()
+                    .body(String.class);
+        } catch (Exception e) {
             e.printStackTrace();
             return null;
         }

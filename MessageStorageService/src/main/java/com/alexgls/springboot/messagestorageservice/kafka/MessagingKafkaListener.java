@@ -2,7 +2,8 @@ package com.alexgls.springboot.messagestorageservice.kafka;
 
 import com.alexgls.springboot.messagestorageservice.dto.CreateMessagePayload;
 import com.alexgls.springboot.messagestorageservice.dto.UpdateMessagePayload;
-import com.alexgls.springboot.messagestorageservice.service.MessagingService;
+import com.alexgls.springboot.messagestorageservice.service.MessageEventsService;
+import com.alexgls.springboot.messagestorageservice.service.MessagingStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -13,30 +14,24 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class MessagingKafkaListener {
 
-    private final MessagingService messagingService;
+    private final MessagingStorageService messagingService;
+
+    private final MessageEventsService messageEventsService;
+
 
     @KafkaListener(topics = "messaging-topic", groupId = "messaging-group", containerFactory = "kafkaCreateMessageListenerContainerFactory")
     public void listen(CreateMessagePayload createMessagePayload) {
         log.info("Message received: {}", createMessagePayload);
         log.info("Starting message saving process in database...");
         messagingService.save(createMessagePayload)
-                .doOnNext(savedMessage -> {
-                    log.info("Message has been successfully saved: {}", savedMessage);
+                .doOnNext(savedMessageDto -> {
+                    log.info("Message has been successfully saved in database: {}", savedMessageDto);
+                    messageEventsService.sendMessage(savedMessageDto);
                 })
                 .subscribe(
                         result -> log.info("Reactive stream completed successfully for payload: {}", createMessagePayload),
-                        error -> log.error("!!! FAILED to process message payload: " + createMessagePayload, error)
+                        error -> log.error(" FAILED to process message payload: " + createMessagePayload, error)
                 );
-    }
-
-    @KafkaListener(topics = "update-messaging-topic", groupId = "messaging-group", containerFactory = "kafkaUpdateMessageListenerContainerFactory")
-    public void listen(UpdateMessagePayload updateMessagePayload) {
-        log.info("Message received: {}", updateMessagePayload);
-        log.info("Saving message in database...");
-        messagingService.update(updateMessagePayload)
-                .doOnNext(savedMessage -> {
-                    log.info("Message updated: {}", savedMessage);
-                });
     }
 
 }

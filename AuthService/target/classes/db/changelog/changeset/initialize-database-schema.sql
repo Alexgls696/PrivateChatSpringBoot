@@ -11,10 +11,11 @@ create table roles
 create table users
 (
     id               integer primary key generated always as identity,
+    name             varchar(128),
+    surname          varchar(128),
     username         varchar(64) unique,
     password         varchar(256),
-    email            varchar(128) unique,
-    users_service_id integer unique not null
+    email            varchar(128) unique
 );
 
 create table users_roles
@@ -25,10 +26,11 @@ create table users_roles
     constraint role_and_user_unique unique (role_id, user_id)
 );
 
-create table refresh_tokens(
-    id bigint primary key generated always as identity,
-    user_id integer,
-    token varchar(512),
+create table refresh_tokens
+(
+    id           bigint primary key generated always as identity,
+    user_id      integer,
+    token        varchar(512),
     expires_date timestamp
 );
 

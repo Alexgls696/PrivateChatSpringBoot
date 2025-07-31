@@ -103,14 +103,9 @@ public class AuthController {
 
     @PostMapping("/register")
     public Mono<ResponseEntity<Void>> register(@RequestBody UserRegisterDto userRegisterDto) {
-        log.info("Register user: username={} email={} usersServiceId={}", userRegisterDto.username(), userRegisterDto.email(), userRegisterDto.studentId());
+        log.info("Register user: username={} email={}", userRegisterDto.username(), userRegisterDto.email());
         return usersService.saveUser(userRegisterDto)
                 .thenReturn(ResponseEntity.ok().build());
-    }
-
-    @GetMapping("users/{id}")
-    public Mono<User> findUserById(@PathVariable("id") int id) {
-        return usersService.findUserById(id);
     }
 
     @PostMapping("/validate")
@@ -118,12 +113,6 @@ public class AuthController {
         log.info("Try to validate token: {}", tokenRequest);
         return ResponseEntity
                 .ok(jwtUtil.validateTokenAndGetJwtValidationResponse(tokenRequest.getToken()));
-    }
-
-    @DeleteMapping("/remove/{id}")
-    public Mono<Void> removeUserByUsername(@PathVariable("id") int studentId) {
-        log.info("Remove user: studentId={}", studentId);
-        return usersService.removeUserByUserServiceId(studentId);
     }
 
 }

@@ -10,7 +10,7 @@ import reactor.core.publisher.Flux;
 @Repository
 public interface ChatsRepository extends ReactiveCrudRepository<Chat, Integer> {
 
-    @Query(value = "select c.chat_id from chats c " +
+    @Query(value = "select c.* from chats c " +
             "join participants p on p.chat_id = c.chat_id where user_id = :userId")
     Flux<Chat> findChatsByUserId(@Param("userId") int userId);
 }

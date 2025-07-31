@@ -8,8 +8,4 @@ import ru.alexgls.springboot.entity.User;
 @Repository
 public interface UsersRepository extends ReactiveCrudRepository<User, Integer> {
     Mono<User> findByUsername(String username);
-
-    Mono<Void> removeUserByUsersServiceId(int id);
-
-    Mono<Integer>findUserIdByUsersServiceId(int id);
 }

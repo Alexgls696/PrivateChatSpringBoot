@@ -40,6 +40,7 @@ async function apiFetch(url, options = {}) {
 // Вспомогательная функция для подготовки заголовков
 function prepareRequestOptions(options) {
     const token = localStorage.getItem('accessToken');
+    console.log(token);
     const headers = {
         'Content-Type': 'application/json',
         ...options.headers, // Позволяет передавать кастомные заголовки

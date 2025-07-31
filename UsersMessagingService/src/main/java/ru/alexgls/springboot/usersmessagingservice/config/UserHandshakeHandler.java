@@ -13,7 +13,6 @@ public class UserHandshakeHandler extends DefaultHandshakeHandler {
     protected Principal determineUser(ServerHttpRequest request,
                                       WebSocketHandler wsHandler,
                                       Map<String, Object> attributes) {
-        // Попытка получить userId из атрибутов, установленных в JwtHandshakeInterceptor
         String userId = (String) attributes.get("userId");
         if (userId == null) {
             // fallback, например, сгенерировать UUID или вернуть null

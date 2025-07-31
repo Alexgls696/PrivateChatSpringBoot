@@ -1,6 +1,7 @@
 package com.alexgls.springboot.messagestorageservice.service;
 
 import com.alexgls.springboot.messagestorageservice.dto.CreateMessagePayload;
+import com.alexgls.springboot.messagestorageservice.dto.CreatedMessageDto;
 import com.alexgls.springboot.messagestorageservice.dto.UpdateMessagePayload;
 import com.alexgls.springboot.messagestorageservice.entity.Chat;
 import com.alexgls.springboot.messagestorageservice.entity.Message;
@@ -22,7 +23,7 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class MessagingServiceImpl implements MessagingService {
+public class MessagingStorageService {
     private final MessagesRepository messagesRepository;
     private final ChatsRepository chatsRepository;
     private final ParticipantsRepository participantsRepository;
@@ -35,7 +36,7 @@ public class MessagingServiceImpl implements MessagingService {
             chat.setType("Private");
 
             return chatsRepository.save(chat)
-                    .flatMap(savedChat->createParticipantsForChat(savedChat, createMessagePayload));
+                    .flatMap(savedChat -> createParticipantsForChat(savedChat, createMessagePayload));
         } else {
             return Mono.just(createMessagePayload.chatId());
         }
@@ -57,13 +58,12 @@ public class MessagingServiceImpl implements MessagingService {
     }
 
 
-    @Override
     public Flux<Message> findAllMessagesByChatId(int chatId) {
         return messagesRepository.findAllByChatId(chatId);
     }
 
-    @Override
-    public Mono<Message> save(CreateMessagePayload createMessagePayload) {
+    @Transactional
+    public Mono<CreatedMessageDto> save(CreateMessagePayload createMessagePayload) {
         return checkChatBeforeCreateMessage(createMessagePayload)
                 .flatMap(chatId -> {
                     Message message = new Message();
@@ -72,10 +72,18 @@ public class MessagingServiceImpl implements MessagingService {
                     message.setContent(createMessagePayload.content());
                     message.setCreatedAt(Timestamp.from(Instant.now()));
                     return messagesRepository.save(message);
+                }).flatMap(savedMessage -> {
+                    CreatedMessageDto payload = new CreatedMessageDto();
+                    payload.setId(savedMessage.getId());
+                    payload.setChatId(savedMessage.getChatId());
+                    payload.setSenderId(savedMessage.getSenderId());
+                    payload.setContent(savedMessage.getContent());
+                    payload.setCreatedAt(Timestamp.from(Instant.now()));
+                    payload.setReceiverId(createMessagePayload.recipientId());
+                    return Mono.just(payload);
                 });
     }
 
-    @Override
     public Mono<Message> update(UpdateMessagePayload updateMessagePayload) {
         return messagesRepository.findByChatIdAndId(updateMessagePayload.chatId(), updateMessagePayload.id())
                 .flatMap(message -> {
@@ -85,7 +93,6 @@ public class MessagingServiceImpl implements MessagingService {
                 });
     }
 
-    @Override
     public Mono<Void> deleteById(long id) {
         return messagesRepository.deleteById(id);
     }

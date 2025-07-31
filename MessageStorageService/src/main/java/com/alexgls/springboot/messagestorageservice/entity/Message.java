@@ -5,6 +5,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -39,4 +40,7 @@ public class Message {
 
     @Column(value = "read_at")
     private Timestamp readAt;
+
+    @Transient
+    private int receiverId;
 }

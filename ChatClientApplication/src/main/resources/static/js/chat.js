@@ -1,5 +1,5 @@
 const API_URL = 'http://localhost:8086';
-
+let chatId = null;
 const chatManager = {
     stompClient: null,
     isConnecting: false,
@@ -38,15 +38,20 @@ const chatManager = {
         this.isConnected = true;
         this.retryCount = 0;
 
-        this.stompClient.subscribe(`/user/queue/messages`, function(message) {
-            const msg = JSON.parse(message.body);
-            console.log("Received:", msg);
-            addMessageToUI(`От ${msg.fromUserId}: ${msg.content}`, false);
+        this.stompClient.subscribe(`/user/queue/messages`, async function(message) {
+            try {
+                const msg = JSON.parse(message.body);
+                chatId = msg.chatId;
+                const isSentByUser = false;
+                console.log(`Полученное сообщение: ${msg}`);
+                await addMessageToUI(msg, isSentByUser);
+            } catch (error) {
+                console.error('Ошибка при обработке сообщения:', error);
+            }
         });
     },
 
     onConnectError: async function(error) {
-        console.log(error);
         this.isConnecting = false;
         this.isConnected = false;
 
@@ -83,7 +88,6 @@ const chatManager = {
                 content: content,
                 timestamp: Date.now()
             };
-            console.log(chatMessage);
             this.stompClient.send("/app/chat.send", {}, JSON.stringify(chatMessage));
         } else {
             alert("Нет подключения к чату для отправки сообщения.");
@@ -99,14 +103,58 @@ const chatManager = {
     }
 };
 
-function addMessageToUI(message, isSentByUser) {
+async function getUserInitials(userId) {
+    let token = localStorage.getItem('accessToken')
+    try {
+        const response = await fetch(`http://localhost:8085/api/users/initials/${userId}`,{
+            headers : {
+                'Authorization' : `Bearer ${token}`
+            }
+        });
+        if (!response.ok) {
+            console.error('Ошибка при получении инициалов:', response.status);
+            return '??'; // Возвращаем заглушку при ошибке
+        }
+        return await response.text();
+    } catch (error) {
+        console.error('Ошибка при запросе инициалов:', error);
+        return '??';
+    }
+}
 
+// Функция для форматирования даты в читаемый вид
+function formatTimestamp(timestamp) {
+    if (!timestamp) return 'неизвестно';
+    const date = new Date(timestamp);
+    return date.toLocaleString('ru-RU');
+}
+
+async function addMessageToUI(messageData, isSentByUser) {
     const messagesDiv = document.getElementById('messages');
     if (!messagesDiv) return;
-    const messageElement = document.createElement('p');
-    messageElement.textContent = message;
-    messageElement.className = isSentByUser ? 'sent' : 'received';
+
+    const messageElement = document.createElement('div');
+    messageElement.className = `message ${isSentByUser ? 'sent' : 'received'}`;
+    console.log(`Полученное сообщение: ${messageData}`);
+    const initials = await getUserInitials(messageData.senderId);
+
+    // Создаём HTML-структуру сообщения
+    messageElement.innerHTML = `
+        <div class="message-header">
+            <span>${isSentByUser ? 'Вы' : `Отправитель: ${initials}`}</span>
+        </div>
+        <div class="message-content">${messageData.content}</div>
+        <div class="message-time">
+            Отправлено: ${formatTimestamp(messageData.createdAt)}
+            ${messageData.updatedAt ? `(Изменено: ${formatTimestamp(messageData.updatedAt)})` : ''}
+        </div>
+        <div class="message-status">
+            Статус: ${messageData.isRead ? `Прочитано ${formatTimestamp(messageData.readAt)}` : 'Не прочитано'}
+        </div>
+    `;
+
     messagesDiv.appendChild(messageElement);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight; // Автопрокрутка к новому сообщению
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -121,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const recipientInput = document.getElementById('recipient-id-input');
             if (input && recipientInput && input.value && recipientInput.value) {
                 chatManager.sendMessage(input.value, recipientInput.value);
-                addMessageToUI(`Вы: ${input.value}`, true);
+                //addMessageToUI(`Вы: ${input.value}`, true);
                 input.value = '';
             }
         });

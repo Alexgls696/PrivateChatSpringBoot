@@ -43,7 +43,7 @@ public class WebSecurityConfig {
     }
 
     @Bean
-    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http,Converter<Jwt, ? extends Mono<? extends AbstractAuthenticationToken>> converter ) {
+    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http, Converter<Jwt, ? extends Mono<? extends AbstractAuthenticationToken>> converter) {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
@@ -56,7 +56,6 @@ public class WebSecurityConfig {
                         .pathMatchers("/auth/validate").permitAll()
                         .pathMatchers("/auth/refresh").permitAll()
                         .pathMatchers(HttpMethod.DELETE, "/auth/remove/**").hasRole("MANAGER")
-                        .pathMatchers("/users/**").authenticated()
                         .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(server -> server.jwt(jwt -> jwt
