@@ -101,7 +101,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     chatId: activeChatId,
                     content: content
                 };
-                console.log(chatMessage);
                 this.stompClient.send("/app/chat.send", {}, JSON.stringify(chatMessage));
                 addMessageToUI({
                     content: content,
@@ -310,7 +309,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Для групповых чатов всегда показываем имя, для приватных - можно скрыть (по желанию)
         const senderDisplay = chatManager.isGroupChat ? `<div class="message-sender">${senderName}</div>` : (isSentByMe ? '' : `<div class="message-sender">${senderName}</div>`);
-
 
         msgDiv.innerHTML = `
             ${senderDisplay}

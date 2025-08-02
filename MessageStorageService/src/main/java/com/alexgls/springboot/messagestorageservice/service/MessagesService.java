@@ -39,7 +39,6 @@ public class MessagesService {
         return createdMessageDto;
     }
 
-
     //ДОДЕЛАТЬ ЭТОТ МЕТОД ДЛЯ РАССЫЛКИ ВСЕМ ПОЛЬЗОВАТЕЛЯМ
     @Transactional
     public Mono<CreatedMessageDto> save(CreateMessagePayload createMessagePayload) {

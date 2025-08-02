@@ -28,6 +28,6 @@ public class MessagesController {
             @RequestParam(value = "size", defaultValue = "10") int pageSize) {
 
         log.info("findMessagesByChatId chatId={}, page={}, size={}", chatId, page, pageSize);
-        return messagesService.getMessagesByChatId(chatId, page, pageSize);
+        return messagesService.getMessagesByChatId(chatId, page * pageSize, pageSize);
     }
 }
