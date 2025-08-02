@@ -1,5 +1,4 @@
-package ru.alexgls.springboot.dto;
-
+package com.alexgls.springboot.messagestorageservice.dto;
 
 public record GetUserDto(
         int id,

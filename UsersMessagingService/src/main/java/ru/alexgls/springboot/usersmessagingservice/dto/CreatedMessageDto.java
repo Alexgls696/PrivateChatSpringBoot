@@ -16,7 +16,7 @@ public class CreatedMessageDto {
 
     private int senderId;
 
-    private int receiverId;
+    private int recipientId;
 
     private String content;
 

@@ -42,5 +42,5 @@ public class Message {
     private Timestamp readAt;
 
     @Transient
-    private int receiverId;
+    private int recipientId;
 }

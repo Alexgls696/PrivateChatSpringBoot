@@ -18,7 +18,7 @@ public class MessagingService {
     private final KafkaTemplate<String, CreateMessagePayload> createMessageKafkaTemplate;
 
     public void sendMessage(ChatMessage message, Principal principal) {
-        CreateMessagePayload payload = new CreateMessagePayload(null, Integer.parseInt(principal.getName()), Integer.parseInt(message.getToUserId()), message.getContent());
+        CreateMessagePayload payload = new CreateMessagePayload(Integer.parseInt(message.getChatId()), Integer.parseInt(principal.getName()), message.getContent());
         CompletableFuture<SendResult<String, CreateMessagePayload>> futureResult = createMessageKafkaTemplate.send("messaging-topic", payload).toCompletableFuture();
         futureResult.whenComplete((result, throwable) -> {
             if (throwable == null) {

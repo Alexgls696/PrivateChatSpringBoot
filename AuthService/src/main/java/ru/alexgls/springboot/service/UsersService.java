@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import ru.alexgls.springboot.dto.GetUserDto;
 import ru.alexgls.springboot.dto.UserRegisterDto;
 import ru.alexgls.springboot.entity.Role;
 import ru.alexgls.springboot.entity.User;
@@ -34,6 +35,11 @@ public class UsersService {
         return usersRepository.findById(id);
     }
 
+    public Mono<GetUserDto>findUserDtoById(int id) {
+        return usersRepository.findById(id)
+                .map(user->new GetUserDto(user.getId(),user.getName(),user.getSurname(),user.getUsername()));
+    }
+
     public Mono<String> findUserInitialsById(int id) {
         return usersRepository.findById(id)
                 .flatMap(user -> Mono.just(user.getName() + " " + user.getSurname()));
@@ -60,6 +66,11 @@ public class UsersService {
                     Role savedRole = tuple.getT2();
                     return userRolesRepository.insertIntoUserRoles(savedUser.getId(), savedRole.getId());
                 });
+    }
+
+    public Flux<GetUserDto> findAllUsers() {
+        return usersRepository.findAll()
+                .map(user -> new GetUserDto(user.getId(), user.getName(), user.getSurname(), user.getUsername()));
     }
 
 }

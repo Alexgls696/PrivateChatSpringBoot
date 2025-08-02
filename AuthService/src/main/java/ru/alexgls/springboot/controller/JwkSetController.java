@@ -15,7 +15,6 @@ import java.util.Map;
 public class JwkSetController {
     private final KeyPairProvider keyPairProvider;
 
-
     @GetMapping("/.well-known/jwks.json")
     public Map<String, Object> jwks() {
         RSAKey rsaKey = new RSAKey.Builder(keyPairProvider.getPublicKey())

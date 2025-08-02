@@ -21,9 +21,14 @@ public class PagesController {
         return "logout";
     }
 
-    @RequestMapping(value = {"/chat", "/index", "/"})
+    @RequestMapping(value = {"/chat"})
     public String chat() {
         return "chat";
+    }
+
+    @RequestMapping(value = {"/chats","/index","/"})
+    public String index() {
+        return "chats";
     }
 
     @GetMapping("error-page")

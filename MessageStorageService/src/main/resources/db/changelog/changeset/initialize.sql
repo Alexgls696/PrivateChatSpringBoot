@@ -9,7 +9,8 @@ create table chats
     is_group   boolean default false,
     type       varchar(32),
     created_at timestamp,
-    updated_at timestamp
+    updated_at timestamp,
+    last_message_id integer
 );
 
 create table participants
@@ -32,3 +33,4 @@ create table messages
     read_at    timestamp
 );
 
+--Создание триггера и триггерной функции

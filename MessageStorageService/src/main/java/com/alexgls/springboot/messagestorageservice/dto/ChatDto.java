@@ -1,5 +1,7 @@
 package com.alexgls.springboot.messagestorageservice.dto;
 
+
+import com.alexgls.springboot.messagestorageservice.entity.Message;
 import lombok.*;
 
 import java.sql.Timestamp;
@@ -9,22 +11,18 @@ import java.sql.Timestamp;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class CreatedMessageDto {
-    private long id;
-
+public class ChatDto {
     private int chatId;
 
-    private int senderId;
+    private String name;
 
-    private int recipientId;
+    private boolean isGroup;
 
-    private String content;
+    private String type;
 
     private Timestamp createdAt;
 
     private Timestamp updatedAt;
 
-    private boolean isRead;
-
-    private Timestamp readAt;
+    private Message lastMessage;
 }

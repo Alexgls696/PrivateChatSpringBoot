@@ -8,7 +8,6 @@ import lombok.*;
 @NoArgsConstructor
 @ToString
 public class ChatMessage {
-    private String toUserId;
+    private String chatId;
     private String content;
-    private long timestamp;
 }

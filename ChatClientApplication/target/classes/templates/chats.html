@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <title>Список чатов пользователя</title>
+    <link rel="stylesheet" href="/css/chats.css" />
+</head>
+<body>
+<div class="container">
+    <div class="main-header">
+        <h1>Ваши чаты</h1>
+        <button id="findUserBtn" class="find-user-btn">Найти пользователя</button>
+    </div>
+    <div id="status" class="status">Загрузка...</div>
+    <div class="chat-wrapper">
+        <ul id="chatList" class="chat-list"></ul>
+        <section id="chatWindow" class="chat-window hidden">
+            <header class="chat-window__header">
+                <button id="closeChatBtn" class="close-btn" title="Закрыть чат">×</button>
+                <h2 id="chatTitle">Чат</h2>
+            </header>
+            <div id="messages" class="messages">
+                <p class="placeholder">Выберите чат, чтобы начать общение</p>
+            </div>
+            <form id="messageForm" class="message-form">
+                <input
+                        type="text"
+                        id="messageInput"
+                        class="message-input"
+                        placeholder="Введите сообщение..."
+                        autocomplete="off"
+                />
+                <button type="submit" class="send-btn">Отправить</button>
+            </form>
+        </section>
+    </div>
+</div>
+
+<!-- Модальное окно для поиска пользователей -->
+<div id="userSearchModal" class="modal hidden">
+    <div class="modal-content">
+        <header class="modal-header">
+            <h2>Начать новый чат</h2>
+            <button id="closeModalBtn" class="close-btn">×</button>
+        </header>
+        <div id="userListContainer" class="user-list-container">
+            <!-- Сюда будет загружаться список пользователей -->
+        </div>
+    </div>
+</div>
+
+
+<!-- Подключение библиотек -->
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
+<!-- Основные скрипты -->
+<script src="/js/apiClient.js"></script>
+<script src="/js/chats.js"></script>
+
+</body>
+</html>

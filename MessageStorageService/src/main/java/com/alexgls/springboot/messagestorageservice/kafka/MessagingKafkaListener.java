@@ -1,9 +1,8 @@
 package com.alexgls.springboot.messagestorageservice.kafka;
 
 import com.alexgls.springboot.messagestorageservice.dto.CreateMessagePayload;
-import com.alexgls.springboot.messagestorageservice.dto.UpdateMessagePayload;
 import com.alexgls.springboot.messagestorageservice.service.MessageEventsService;
-import com.alexgls.springboot.messagestorageservice.service.MessagingStorageService;
+import com.alexgls.springboot.messagestorageservice.service.MessagesService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -14,10 +13,9 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class MessagingKafkaListener {
 
-    private final MessagingStorageService messagingService;
+    private final MessagesService messagingService;
 
     private final MessageEventsService messageEventsService;
-
 
     @KafkaListener(topics = "messaging-topic", groupId = "messaging-group", containerFactory = "kafkaCreateMessageListenerContainerFactory")
     public void listen(CreateMessagePayload createMessagePayload) {
