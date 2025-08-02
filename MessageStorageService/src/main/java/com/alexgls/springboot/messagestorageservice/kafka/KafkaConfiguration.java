@@ -2,6 +2,7 @@ package com.alexgls.springboot.messagestorageservice.kafka;
 
 import com.alexgls.springboot.messagestorageservice.dto.CreateMessagePayload;
 import com.alexgls.springboot.messagestorageservice.dto.CreatedMessageDto;
+import com.alexgls.springboot.messagestorageservice.dto.ReadMessagePayload;
 import com.alexgls.springboot.messagestorageservice.dto.UpdateMessagePayload;
 import com.alexgls.springboot.messagestorageservice.entity.Message;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -19,6 +20,7 @@ import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Configuration
@@ -67,11 +69,21 @@ public class KafkaConfiguration {
 
     @Bean
     public ProducerFactory<String, CreatedMessageDto> messageProducerFactory() {
-        Map<String, Object> props = initializeProperties();
+        Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:29092");
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
         JsonSerializer<CreatedMessageDto> jsonSerializer = new JsonSerializer<>();
+        return new DefaultKafkaProducerFactory<>(props, new StringSerializer(), jsonSerializer);
+    }
+
+    @Bean
+    public ProducerFactory<String, ReadMessagePayload> readMessagePayloadProducerFactory() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:29092");
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        JsonSerializer<ReadMessagePayload> jsonSerializer = new JsonSerializer<>();
         return new DefaultKafkaProducerFactory<>(props, new StringSerializer(), jsonSerializer);
     }
 
@@ -81,9 +93,21 @@ public class KafkaConfiguration {
     }
 
     @Bean
+    public KafkaTemplate<String, ReadMessagePayload> readMessagePayloadKafkaTemplate() {
+        return new KafkaTemplate<>(readMessagePayloadProducerFactory());
+    }
+
+    @Bean
     public NewTopic eventsTopic() {
         return TopicBuilder
                 .name("events-message-created")
+                .build();
+    }
+
+    @Bean
+    public NewTopic readMessagesTopic() {
+        return TopicBuilder
+                .name("read-message-topic")
                 .build();
     }
 

@@ -1,4 +1,4 @@
-package ru.alexgls.springboot.usersmessagingservice.messaging;
+package ru.alexgls.springboot.usersmessagingservice.config;
 
 import ru.alexgls.springboot.usersmessagingservice.client.AuthServiceClient;
 import ru.alexgls.springboot.usersmessagingservice.dto.JwtValidationResponse;

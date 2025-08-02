@@ -1,4 +1,4 @@
-package ru.alexgls.springboot.usersmessagingservice.messaging;
+package ru.alexgls.springboot.usersmessagingservice.dto;
 
 import lombok.*;
 

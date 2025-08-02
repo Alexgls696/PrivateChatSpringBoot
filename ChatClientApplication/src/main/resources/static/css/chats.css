@@ -7,18 +7,35 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: #f5f7fa;
     margin: 0;
-    padding: 20px;
+    /* ИЗМЕНЕНО: Уменьшены внешние отступы */
+    padding: 10px;
     color: #333;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 .container {
-    max-width: 1200px;
+    /* ИЗМЕНЕНО: Контейнер теперь занимает почти всю ширину и высоту */
+    max-width: 95%;
+    width: 100%;
+    height: calc(100vh - 80px); /* Высота экрана минус место для заголовка */
     margin: 0 auto;
-    padding: 0 15px;
+    display: flex;
+    flex-direction: column;
 }
 
-h1 {
-    margin-bottom: 25px;
+.main-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+    position: relative;
+    flex-shrink: 0; /* Заголовок не будет сжиматься */
+}
+
+.main-header h1 {
+    margin: 0;
     font-weight: 700;
     color: #2c3e50;
     text-align: center;
@@ -29,27 +46,34 @@ h1 {
     margin-bottom: 15px;
     font-weight: 600;
     color: #666;
+    flex-shrink: 0;
 }
 
 .chat-wrapper {
     display: flex;
     gap: 20px;
-    min-height: 400px;
+    /* ИЗМЕНЕНО: Увеличена высота обертки чата */
+    flex-grow: 1; /* Обертка будет занимать все доступное пространство */
+    min-height: 500px; /* Увеличена минимальная высота */
     width: 100%;
 }
 
 .chat-list {
     list-style: none;
     padding: 0;
-    width: 30%;
-    min-width: 300px;
+    /* ИЗМЕНЕНО: Изменены пропорции */
+    width: 25%;
+    min-width: 280px;
     background: #fff;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgb(0 0 0 / 0.1);
     overflow-y: auto;
-    max-height: 600px;
+    /* ИЗМЕНЕНО: Высота теперь наследуется */
+    max-height: 100%;
     border: 1px solid #ddd;
     margin: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .chat-list li {
@@ -76,7 +100,7 @@ h1 {
 
 .chat-title {
     font-weight: 600;
-    font-size: 1.1em;
+    font-size: 1.05em; /* Немного уменьшен для компактности */
     color: #2c3e50;
     margin-bottom: 6px;
 }
@@ -104,13 +128,15 @@ h1 {
 
 .chat-window {
     flex: 1;
-    width: 70%;
+    /* ИЗМЕНЕНО: Изменены пропорции */
+    width: 75%;
     background: #fff;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgb(0 0 0 / 0.1);
     display: flex;
     flex-direction: column;
-    max-height: 600px;
+    /* ИЗМЕНЕНО: Высота теперь наследуется */
+    max-height: 100%;
     border: 1px solid #ddd;
     transition: opacity 0.3s ease;
 }
@@ -127,6 +153,7 @@ h1 {
     justify-content: space-between;
     background-color: #f7f7f7;
     border-radius: 8px 8px 0 0;
+    flex-shrink: 0;
 }
 
 .chat-window__header h2 {
@@ -188,6 +215,13 @@ h1 {
     margin-bottom: 5px;
 }
 
+.message.received .message-sender {
+    color: #3498db;
+    font-size: 0.85em;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
 .message-content {
     font-size: 1em;
     word-wrap: break-word;
@@ -213,6 +247,7 @@ h1 {
     border-top: 1px solid #eee;
     background: #f9f9f9;
     border-radius: 0 0 8px 8px;
+    flex-shrink: 0;
 }
 
 .message-input {
@@ -242,18 +277,6 @@ h1 {
 
 .send-btn:hover {
     background: #2980b9;
-}
-
-.main-header {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 25px;
-    position: relative;
-}
-
-.main-header h1 {
-    margin: 0;
 }
 
 .find-user-btn {
@@ -358,19 +381,59 @@ h1 {
     font-size: 0.9em;
 }
 
-.message.received .message-sender {
-    color: #3498db; // Цвет имени собеседника
-font-size: 0.85em;
-    margin-bottom: 4px;
+.message-meta {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+}
+
+.message-status {
+    font-size: 0.75em;
+    color: white;
+    font-style: italic;
+    transition: color 0.3s ease;
+}
+
+
+.message-status.read {
+    color: white; /* Яркий синий цвет, как у галочек в мессенджерах */
     font-weight: 600;
+    font-style: normal;
 }
 
 @media (max-width: 768px) {
+    .container {
+        max-width: 100%;
+        height: 100vh;
+        padding: 0;
+    }
+
+    body {
+        padding: 0;
+    }
+
     .chat-wrapper {
         flex-direction: column;
+        height: 100%;
+        gap: 0;
     }
+
     .chat-list, .chat-window {
         width: 100%;
-        max-height: 45vh;
+        max-height: none;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+    }
+
+    .chat-list {
+        flex-grow: 0;
+        flex-shrink: 1;
+        height: 35%; /* Список чатов занимает 35% высоты */
+    }
+
+    .chat-window {
+        height: 65%; /* Окно чата занимает 65% высоты */
     }
 }

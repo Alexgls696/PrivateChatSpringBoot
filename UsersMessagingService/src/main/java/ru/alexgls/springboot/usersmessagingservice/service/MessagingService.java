@@ -1,5 +1,6 @@
-package ru.alexgls.springboot.usersmessagingservice.messaging;
+package ru.alexgls.springboot.usersmessagingservice.service;
 
+import ru.alexgls.springboot.usersmessagingservice.dto.ChatMessage;
 import ru.alexgls.springboot.usersmessagingservice.dto.CreateMessagePayload;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

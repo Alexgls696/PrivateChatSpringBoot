@@ -2,6 +2,7 @@ package com.alexgls.springboot.messagestorageservice.service;
 
 import com.alexgls.springboot.messagestorageservice.dto.CreateMessagePayload;
 import com.alexgls.springboot.messagestorageservice.dto.CreatedMessageDto;
+import com.alexgls.springboot.messagestorageservice.dto.ReadMessagePayload;
 import com.alexgls.springboot.messagestorageservice.entity.Chat;
 import com.alexgls.springboot.messagestorageservice.entity.Message;
 import com.alexgls.springboot.messagestorageservice.exceptions.NoSuchRecipientException;
@@ -15,6 +16,7 @@ import reactor.core.publisher.Mono;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +26,13 @@ public class MessagesService {
 
     public Flux<Message> getMessagesByChatId(int chatId, int page, int pageSize) {
         return messagesRepository.findAllMessagesByChatId(chatId, page, pageSize);
+    }
+
+
+    public Mono<Long> readMessagesByList(List<ReadMessagePayload> messages) {
+        return Flux.fromIterable(messages)
+                .flatMap(message -> messagesRepository.readMessagesByList(message.messageId()))
+                .count();
     }
 
     private CreatedMessageDto createMessageDto(Message message) {
@@ -38,7 +47,6 @@ public class MessagesService {
         createdMessageDto.setReadAt(message.getReadAt());
         return createdMessageDto;
     }
-
 
     //ДОДЕЛАТЬ ЭТОТ МЕТОД ДЛЯ РАССЫЛКИ ВСЕМ ПОЛЬЗОВАТЕЛЯМ
     @Transactional

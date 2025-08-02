@@ -1,6 +1,7 @@
 package com.alexgls.springboot.messagestorageservice.repository;
 
 import com.alexgls.springboot.messagestorageservice.entity.Message;
+import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
@@ -23,4 +24,10 @@ MessagesRepository extends ReactiveCrudRepository<Message, Long> {
     Flux<Message> findAllMessagesByChatId(@Param("chatId") int chatId,
                                           @Param("page") int page,
                                           @Param("size") int size);
+
+
+
+    @Modifying
+    @Query(value = "update messages set is_read = true, read_at = now() where message_id = :messageId")
+    Mono<Void>readMessagesByList(@Param("messageId") int messageId);
 }

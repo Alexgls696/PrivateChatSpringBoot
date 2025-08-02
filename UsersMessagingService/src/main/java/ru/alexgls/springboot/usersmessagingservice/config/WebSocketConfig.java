@@ -1,7 +1,6 @@
 package ru.alexgls.springboot.usersmessagingservice.config;
 
 import ru.alexgls.springboot.usersmessagingservice.client.AuthServiceClient;
-import ru.alexgls.springboot.usersmessagingservice.messaging.JwtHandshakeInterceptor;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
