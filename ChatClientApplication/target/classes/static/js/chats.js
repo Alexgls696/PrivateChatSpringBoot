@@ -22,7 +22,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let isLoading = false;
     let hasMoreMessages = true;
     let participantCache = {};
-    let currentUserId = null; // ID текущего пользователя (предполагаем, что получаем его)
+    let currentUserId = null;
+    let isChatsLoading = false;
+    let hasMoreChats = true;
 
     const API_URL = 'http://localhost:8086'; // URL для WebSocket
     const API_FETCH_URL = 'http://localhost:8087'; // URL для REST API
@@ -68,15 +70,38 @@ document.addEventListener('DOMContentLoaded', () => {
             this.stompClient.subscribe(`/user/queue/messages`, (message) => {
                 try {
                     const msg = JSON.parse(message.body);
+
                     if (msg.chatId === activeChatId) {
                         const isSentByMe = msg.senderId === currentUserId;
-                        addMessageToUI(msg, isSentByMe);
-                    } else {
 
-                        console.log(`Получено сообщение для другого чата: ${msg.chatId}`);
+                        addMessageToUI(msg, isSentByMe);
+
+                        if (!isSentByMe) {
+                            markMessagesAsRead([msg]);
+                        }
                     }
                 } catch (error) {
-                    console.error('Ошибка обработки входящего сообщения:', error);
+                    console.error('Ошибка обработки нового сообщения:', error);
+                }
+            });
+
+            this.stompClient.subscribe(`/user/queue/read-status`, (notification) => {
+                try {
+                    const readInfo = JSON.parse(notification.body);
+                    if (readInfo.chatId === activeChatId) {
+                        readInfo.messageIds.forEach(id => {
+                            const msgEl = document.querySelector(`[data-message-id='${id}']`);
+                            if (msgEl) {
+                                const statusEl = msgEl.querySelector('.message-status');
+                                if (statusEl) {
+                                    statusEl.textContent = 'Прочитано';
+                                    statusEl.classList.add('read');
+                                }
+                            }
+                        });
+                    }
+                } catch (error) {
+                    console.error('Ошибка обработки уведомления о прочтении:', error);
                 }
             });
         },
@@ -95,18 +120,15 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         sendMessage: function (content) {
-            console.log(activeChatId);
             if (this.stompClient && this.isConnected && activeChatId) {
+
                 const chatMessage = {
                     chatId: activeChatId,
                     content: content
                 };
+
                 this.stompClient.send("/app/chat.send", {}, JSON.stringify(chatMessage));
-                addMessageToUI({
-                    content: content,
-                    sender: 'Вы', // Оптимистичное отображение
-                    createdAt: new Date().toISOString()
-                }, true);
+
                 messageInput.value = '';
             } else {
                 alert("Нет подключения для отправки сообщения.");
@@ -155,6 +177,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function loadChats() {
+        if (isChatsLoading || !hasMoreChats) return;
+
+        isChatsLoading = true;
+
         try {
             const data = await apiFetch(`${API_FETCH_URL}/api/chats/find-by-id/${chatListPage}`);
             statusEl.textContent = '';
@@ -164,11 +190,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 chatItems.forEach(li => chatListEl.appendChild(li));
 
                 chatListPage++;
-            } else if (chatListPage === 0) {
-                statusEl.textContent = 'Чаты не найдены';
+            } else {
+                hasMoreChats = false;
+                if (chatListPage === 0) {
+                    statusEl.textContent = 'Чаты не найдены';
+                }
             }
         } catch (error) {
             statusEl.textContent = `Ошибка загрузки чатов: ${error.message}`;
+        } finally {
+            isChatsLoading = false;
         }
     }
 
@@ -206,13 +237,39 @@ document.addEventListener('DOMContentLoaded', () => {
         return li;
     }
 
+    // В файле chats.js
+
+    async function markMessagesAsRead(messagesToRead) {
+        // Проверяем, есть ли вообще что отправлять
+        if (!messagesToRead || messagesToRead.length === 0) {
+            return;
+        }
+
+        // Формируем payload в том формате, который ожидает бэкенд
+        const payload = messagesToRead.map(msg => ({
+            messageId: msg.id,
+            senderId: msg.senderId,
+            chatId: activeChatId // Используем ID активного чата
+        }));
+
+        console.log('Отправка на прочтение:', payload);
+        try {
+            await apiFetch(`${API_FETCH_URL}/api/messages/read-messages`, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+        } catch (error) {
+            console.error("Не удалось отправить статус прочтения:", error);
+        }
+    }
+
     async function openChat(chat) {
         if (activeChatId === chat.chatId) return;
 
         activeChatId = chat.chatId;
         messagePage = 0;
         hasMoreMessages = true;
-        participantCache = {}; // Очищаем кеш для нового чата
+        participantCache = {};
 
         [...chatListEl.children].forEach(li => {
             li.classList.toggle('active', li.dataset.chatId == activeChatId);
@@ -223,27 +280,26 @@ document.addEventListener('DOMContentLoaded', () => {
         chatWindowEl.classList.remove('hidden');
 
         try {
-            // Запускаем загрузку информации о чате и сообщений одновременно
-            const [chatInfoResult, messages] = await Promise.all([
-                // 1. Получаем информацию о чате (участники и название)
-                (async () => {
-                    if (chat.group) {
-                        chatTitleEl.textContent = chat.name;
-                    } else {
-                        const recipient = await apiFetch(`${API_FETCH_URL}/api/chats/find-recipient-by-private-chat-id/${chat.chatId}`);
-                        chatTitleEl.textContent = `Чат с ${recipient.name} ${recipient.surname}`;
-                    }
-                    // Загружаем всех участников в кеш
-                    const participants = await apiFetch(`${API_FETCH_URL}/api/chats/${chat.chatId}/participants`);
-                    participants.forEach(p => {
-                        participantCache[p.id] = `${p.name} ${p.surname}`;
-                    });
-                })(),
-                // 2. Загружаем первую страницу сообщений
-                loadMessages(chat.chatId, messagePage)
-            ]);
+            if (chat.group) {
+                chatTitleEl.textContent = chat.name;
+            } else {
+                const recipient = await apiFetch(`${API_FETCH_URL}/api/chats/find-recipient-by-private-chat-id/${chat.chatId}`);
+                chatTitleEl.textContent = `Чат с ${recipient.name} ${recipient.surname}`;
+            }
+            const participants = await apiFetch(`${API_FETCH_URL}/api/chats/${chat.chatId}/participants`);
+            participants.forEach(p => {
+                participantCache[p.id] = `${p.name} ${p.surname}`;
+            });
+
+            const messages = await loadMessages(chat.chatId, messagePage);
 
             renderMessages(messages);
+
+            const unreadMessages = messages.filter(msg => !msg.read && msg.senderId !== currentUserId);
+
+            // 2. Вызываем нашу новую функцию для отправки
+            await markMessagesAsRead(unreadMessages);
+
             if (messages.length === pageSize) {
                 messagePage++;
             }
@@ -279,7 +335,6 @@ document.addEventListener('DOMContentLoaded', () => {
             messagesEl.innerHTML = '<p class="placeholder">Сообщений пока нет. Напишите первым!</p>';
             return;
         }
-        // ВАЖНО: Определяем, кто отправитель, для каждого сообщения
         messages.forEach(msg => {
             const isSentByMe = msg.senderId === currentUserId;
             addMessageToUI(msg, isSentByMe, true);
@@ -287,7 +342,6 @@ document.addEventListener('DOMContentLoaded', () => {
         messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
-    // Функция для добавления ОДНОГО сообщения в UI
     function addMessageToUI(msg, isSentByMe, prepend = false) {
         const placeholder = messagesEl.querySelector('.placeholder');
         if (placeholder) placeholder.remove();
@@ -295,26 +349,32 @@ document.addEventListener('DOMContentLoaded', () => {
         const wasScrolledToBottom = messagesEl.scrollHeight - messagesEl.clientHeight <= messagesEl.scrollTop + 1;
 
         const msgDiv = document.createElement('div');
-        // Стили применяются здесь, в зависимости от isSentByMe
         msgDiv.className = `message ${isSentByMe ? 'sent' : 'received'}`;
+        msgDiv.dataset.messageId = msg.id;
 
-        // Получаем имя отправителя из кеша
-        let senderName;
-        if (isSentByMe) {
-            senderName = 'Вы';
-        } else {
-            // Если отправитель есть в кеше, берем его имя, иначе - "Неизвестный"
-            senderName = participantCache[msg.senderId] || 'Неизвестный';
-        }
+        const senderName = isSentByMe ? 'Вы' : (participantCache[msg.senderId] || `Пользователь #${msg.senderId}`);
 
-        // Для групповых чатов всегда показываем имя, для приватных - можно скрыть (по желанию)
-        const senderDisplay = chatManager.isGroupChat ? `<div class="message-sender">${senderName}</div>` : (isSentByMe ? '' : `<div class="message-sender">${senderName}</div>`);
-
-        msgDiv.innerHTML = `
-            ${senderDisplay}
+        if (msg.isPending) {
+            msgDiv.innerHTML = `
             <div class="message-content">${msg.content}</div>
-            <div class="message-meta">${formatDate(msg.createdAt)}</div>
+            <div class="message-meta">
+                <span>Отправка...</span>
+                <span class="message-status pending-animation"></span> 
+            </div>
         `;
+        } else {
+            const statusText = isSentByMe ? (msg.read ? 'Прочитано' : 'Доставлено') : '';
+            const statusClass = isSentByMe && msg.read ? 'read' : '';
+
+            msgDiv.innerHTML = `
+            <div class="message-sender">${senderName}</div>
+            <div class="message-content">${msg.content}</div>
+            <div class="message-meta">
+                <span>${formatDate(msg.createdAt)}</span>
+                <span class="message-status ${statusClass}">${statusText}</span>
+            </div>
+        `;
+        }
 
         if (prepend) {
             messagesEl.prepend(msgDiv);
@@ -355,12 +415,22 @@ document.addEventListener('DOMContentLoaded', () => {
         [...chatListEl.children].forEach(li => li.classList.remove('active'));
     });
 
-    // Бесконечная прокрутка списка чатов
-    chatListEl.addEventListener('scroll', async () => {
-        if (chatListEl.scrollTop + chatListEl.clientHeight >= chatListEl.scrollHeight - 50) {
-            await loadChats();
+    // В файле chats.js
+
+    function debounce(func, delay) {
+        let timeout;
+        return function (...args) {
+            const context = this;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(context, args), delay);
+        };
+    }
+
+    chatListEl.addEventListener('scroll', debounce(() => {
+        if (chatListEl.scrollTop + chatListEl.clientHeight >= chatListEl.scrollHeight - 100) {
+            loadChats();
         }
-    });
+    }, 300));
 
     messagesEl.addEventListener('scroll', async () => {
         if (messagesEl.scrollTop === 0 && hasMoreMessages && !isLoading) {
@@ -406,7 +476,6 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const me = await apiFetch(`${API_USERS_URL}/users/me`);
             currentUserId = me.id;
-            // Сразу добавляем себя в кеш
             participantCache[me.id] = `${me.name} ${me.surname}`;
 
             statusEl.textContent = 'Загрузка чатов...';

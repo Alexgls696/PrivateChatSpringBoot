@@ -381,6 +381,27 @@ body {
     font-size: 0.9em;
 }
 
+.message-meta {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+}
+
+.message-status {
+    font-size: 0.75em;
+    color: white;
+    font-style: italic;
+    transition: color 0.3s ease;
+}
+
+
+.message-status.read {
+    color: white; /* Яркий синий цвет, как у галочек в мессенджерах */
+    font-weight: 600;
+    font-style: normal;
+}
+
 @media (max-width: 768px) {
     .container {
         max-width: 100%;
