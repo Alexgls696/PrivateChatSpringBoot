@@ -3,6 +3,7 @@ volumes:
   students_grades_data:
   security_users_data:
   messaging_db_data:
+  images_db_data:
 
 networks:
   users-network:
@@ -66,6 +67,19 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - "22181:2181"
+
+  images-database:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_IMAGES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - images_db_data:/var/lib/postgresql/data
+    ports:
+      - "5437:5432"
+
 
   kafka:
     image: confluentinc/cp-kafka:7.4.4

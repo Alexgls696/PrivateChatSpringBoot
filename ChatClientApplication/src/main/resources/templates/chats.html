@@ -8,8 +8,15 @@
 <body>
 <div class="container">
     <div class="main-header">
+        <div class="header-buttons left">
+            <button id="logoutBtn" class="header-action-btn logout-btn">Выйти</button>
+        </div>
+
         <h1>Ваши чаты</h1>
-        <button id="findUserBtn" class="find-user-btn">Найти пользователя</button>
+
+        <div class="header-buttons right">
+            <button id="findUserBtn" class="header-action-btn find-user-btn">Найти пользователя</button>
+        </div>
     </div>
     <div id="status" class="status">Загрузка...</div>
     <div class="chat-wrapper">
@@ -41,7 +48,7 @@
     <div class="modal-content">
         <header class="modal-header">
             <h2>Начать новый чат</h2>
-            <button id="closeModalBtn" class="close-btn">×</button>
+            <button id="closeModalBtn" class="close-btn" title="Закрыть окно поиска">×</button>
         </header>
         <div id="userListContainer" class="user-list-container">
             <!-- Сюда будет загружаться список пользователей -->

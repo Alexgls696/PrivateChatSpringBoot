@@ -9,7 +9,9 @@
         <outputRelativeToContentRoot value="true" />
         <module name="MessageStorageService" />
         <module name="UsersMessagingService" />
+        <module name="InDatabaseContentStorageService" />
         <module name="RatingLogClientApplication" />
+        <module name="MediaContentStorageService" />
         <module name="AuthService" />
       </profile>
     </annotationProcessing>
@@ -17,6 +19,8 @@
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="AuthService" options="-parameters" />
+      <module name="InDatabaseContentStorageService" options="-parameters" />
+      <module name="MediaContentStorageService" options="-parameters" />
       <module name="MessageStorageService" options="-parameters" />
       <module name="RatingLogClientApplication" options="-parameters" />
       <module name="UsersMessagingService" options="-parameters" />

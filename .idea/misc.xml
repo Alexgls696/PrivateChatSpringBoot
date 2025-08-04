@@ -8,6 +8,8 @@
         <option value="$PROJECT_DIR$/MessageStorageService/pom.xml" />
         <option value="$PROJECT_DIR$/UsersMessagingService/pom.xml" />
         <option value="$PROJECT_DIR$/ChatClientApplication/pom.xml" />
+        <option value="$PROJECT_DIR$/MediaContentStorageService/pom.xml" />
+        <option value="$PROJECT_DIR$/InDatabaseContentStorageService/pom.xml" />
       </list>
     </option>
   </component>

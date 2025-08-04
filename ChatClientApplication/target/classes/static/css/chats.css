@@ -7,7 +7,6 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: #f5f7fa;
     margin: 0;
-    /* ИЗМЕНЕНО: Уменьшены внешние отступы */
     padding: 10px;
     color: #333;
     height: 100vh;
@@ -16,10 +15,9 @@ body {
 }
 
 .container {
-    /* ИЗМЕНЕНО: Контейнер теперь занимает почти всю ширину и высоту */
     max-width: 95%;
     width: 100%;
-    height: calc(100vh - 80px); /* Высота экрана минус место для заголовка */
+    height: calc(100vh - 80px);
     margin: 0 auto;
     display: flex;
     flex-direction: column;
@@ -27,11 +25,11 @@ body {
 
 .main-header {
     display: flex;
-    justify-content: center;
+    justify-content: center; /* Центрирует H1 */
     align-items: center;
     margin-bottom: 20px;
-    position: relative;
-    flex-shrink: 0; /* Заголовок не будет сжиматься */
+    position: relative; /* Важно для позиционирования кнопок */
+    flex-shrink: 0;
 }
 
 .main-header h1 {
@@ -52,23 +50,20 @@ body {
 .chat-wrapper {
     display: flex;
     gap: 20px;
-    /* ИЗМЕНЕНО: Увеличена высота обертки чата */
-    flex-grow: 1; /* Обертка будет занимать все доступное пространство */
-    min-height: 500px; /* Увеличена минимальная высота */
+    flex-grow: 1;
+    min-height: 500px;
     width: 100%;
 }
 
 .chat-list {
     list-style: none;
     padding: 0;
-    /* ИЗМЕНЕНО: Изменены пропорции */
     width: 25%;
     min-width: 280px;
     background: #fff;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgb(0 0 0 / 0.1);
     overflow-y: auto;
-    /* ИЗМЕНЕНО: Высота теперь наследуется */
     max-height: 100%;
     border: 1px solid #ddd;
     margin: 0;
@@ -100,7 +95,7 @@ body {
 
 .chat-title {
     font-weight: 600;
-    font-size: 1.05em; /* Немного уменьшен для компактности */
+    font-size: 1.05em;
     color: #2c3e50;
     margin-bottom: 6px;
 }
@@ -128,14 +123,12 @@ body {
 
 .chat-window {
     flex: 1;
-    /* ИЗМЕНЕНО: Изменены пропорции */
     width: 75%;
     background: #fff;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgb(0 0 0 / 0.1);
     display: flex;
     flex-direction: column;
-    /* ИЗМЕНЕНО: Высота теперь наследуется */
     max-height: 100%;
     border: 1px solid #ddd;
     transition: opacity 0.3s ease;
@@ -228,6 +221,10 @@ body {
 }
 
 .message-meta {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
     font-size: 0.75em;
     margin-top: 5px;
     text-align: right;
@@ -279,23 +276,53 @@ body {
     background: #2980b9;
 }
 
-.find-user-btn {
+.header-buttons {
     position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.header-buttons.left {
+    left: 0;
+}
+
+.header-buttons.right {
     right: 0;
+}
+
+/* Общий стиль для обеих кнопок */
+.header-action-btn {
     padding: 10px 18px;
     font-size: 0.9em;
     font-weight: 600;
-    background-color: #28a745;
     color: white;
     border: none;
     border-radius: 20px;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header-action-btn:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.find-user-btn {
+    background-color: #28a745;
 }
 
 .find-user-btn:hover {
     background-color: #218838;
 }
+
+.logout-btn {
+    background-color: #dc3545;
+}
+
+.logout-btn:hover {
+    background-color: #c82333;
+}
+
 
 /* Модальное окно */
 .modal {
@@ -381,23 +408,18 @@ body {
     font-size: 0.9em;
 }
 
-.message-meta {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 8px;
-}
-
 .message-status {
     font-size: 0.75em;
-    color: white;
     font-style: italic;
     transition: color 0.3s ease;
 }
 
+.message.sent .message-status {
+    color: #cce7ff; /* Цвет для статуса "Доставлено" */
+}
 
 .message-status.read {
-    color: white; /* Яркий синий цвет, как у галочек в мессенджерах */
+    color: white;
     font-weight: 600;
     font-style: normal;
 }
@@ -430,10 +452,10 @@ body {
     .chat-list {
         flex-grow: 0;
         flex-shrink: 1;
-        height: 35%; /* Список чатов занимает 35% высоты */
+        height: 35%;
     }
 
     .chat-window {
-        height: 65%; /* Окно чата занимает 65% высоты */
+        height: 65%;
     }
 }

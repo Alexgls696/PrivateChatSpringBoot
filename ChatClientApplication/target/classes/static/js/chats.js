@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const messageForm = document.getElementById('messageForm');
     const messageInput = document.getElementById('messageInput');
     const userSearchModal = document.getElementById('userSearchModal');
+    const logoutBtn = document.getElementById('logoutBtn');
 
     const findUserBtn = document.getElementById('findUserBtn');
     const closeModalBtn = document.getElementById('closeModalBtn');
@@ -264,12 +265,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function openChat(chat) {
-        if (activeChatId === chat.chatId) return;
+        if (activeChatId === chat.chatId && !chatWindowEl.classList.contains('hidden')) {
+            return;
+        }
 
         activeChatId = chat.chatId;
         messagePage = 0;
         hasMoreMessages = true;
         participantCache = {};
+        // -------------------------------------------------------------------
 
         [...chatListEl.children].forEach(li => {
             li.classList.toggle('active', li.dataset.chatId == activeChatId);
@@ -280,29 +284,31 @@ document.addEventListener('DOMContentLoaded', () => {
         chatWindowEl.classList.remove('hidden');
 
         try {
-            if (chat.group) {
-                chatTitleEl.textContent = chat.name;
-            } else {
-                const recipient = await apiFetch(`${API_FETCH_URL}/api/chats/find-recipient-by-private-chat-id/${chat.chatId}`);
-                chatTitleEl.textContent = `Чат с ${recipient.name} ${recipient.surname}`;
-            }
-            const participants = await apiFetch(`${API_FETCH_URL}/api/chats/${chat.chatId}/participants`);
-            participants.forEach(p => {
-                participantCache[p.id] = `${p.name} ${p.surname}`;
-            });
-
-            const messages = await loadMessages(chat.chatId, messagePage);
+            const [chatDetailsResult, messages] = await Promise.all([
+                (async () => {
+                    if (chat.group) {
+                        chatTitleEl.textContent = chat.name;
+                    } else {
+                        const recipient = await apiFetch(`${API_FETCH_URL}/api/chats/find-recipient-by-private-chat-id/${chat.chatId}`);
+                        chatTitleEl.textContent = `Чат с ${recipient.name} ${recipient.surname}`;
+                    }
+                    const participants = await apiFetch(`${API_FETCH_URL}/api/chats/${chat.chatId}/participants`);
+                    participants.forEach(p => {
+                        participantCache[p.id] = `${p.name} ${p.surname}`;
+                    });
+                })(),
+                loadMessages(chat.chatId, messagePage)
+            ]);
 
             renderMessages(messages);
 
             const unreadMessages = messages.filter(msg => !msg.read && msg.senderId !== currentUserId);
-
-            // 2. Вызываем нашу новую функцию для отправки
             await markMessagesAsRead(unreadMessages);
 
             if (messages.length === pageSize) {
                 messagePage++;
             }
+
         } catch (error) {
             console.error("Ошибка открытия чата:", error);
             messagesEl.innerHTML = `<p class="placeholder">Не удалось загрузить данные чата.</p>`;
@@ -466,6 +472,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target === userSearchModal) {
             userSearchModal.classList.add('hidden');
         }
+    });
+
+    logoutBtn.addEventListener('click', () => {
+        window.location.href = '/logout';
     });
 
     // =================================================================
