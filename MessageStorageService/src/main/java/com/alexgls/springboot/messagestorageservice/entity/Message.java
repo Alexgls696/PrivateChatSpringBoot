@@ -10,6 +10,7 @@ import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 @Table(name = "messages")
 @Getter
@@ -29,6 +30,9 @@ public class Message {
 
     private String content;
 
+    @Column(value = "message_type")
+    private MessageType type;
+
     @Column(value = "created_at")
     private Timestamp createdAt;
 
@@ -43,4 +47,5 @@ public class Message {
 
     @Transient
     private int recipientId;
+
 }
