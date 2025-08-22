@@ -3,6 +3,7 @@ package ru.alexgls.springboot.usersmessagingservice.dto;
 import lombok.*;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 @Getter
 @Setter
@@ -27,4 +28,9 @@ public class CreatedMessageDto {
     private boolean isRead;
 
     private Timestamp readAt;
+
+    private MessageType type;
+
+    private List<Attachment> attachments;
+
 }

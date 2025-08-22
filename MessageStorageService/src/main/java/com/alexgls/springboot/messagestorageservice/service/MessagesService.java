@@ -22,6 +22,8 @@ import reactor.core.publisher.Mono;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -35,7 +37,19 @@ public class MessagesService {
     private final AttachmentRepository attachmentRepository;
 
     public Flux<Message> getMessagesByChatId(int chatId, int page, int pageSize) {
-        return messagesRepository.findAllMessagesByChatId(chatId, page, pageSize);
+        return messagesRepository.findAllMessagesByChatId(chatId, page, pageSize)
+                .flatMap(message -> {
+                    Mono<List<Attachment>> attachments = attachmentRepository.findAllByMessageId(message.getId()).collectList();
+                    return Mono.zip(Mono.just(message), attachments)
+                            .map(tuple -> {
+                                var mes = tuple.getT1();
+                                var attachmentsList = tuple.getT2();
+                                log.info(mes.toString());
+                                mes.setAttachments(attachmentsList);
+                                return mes;
+                            });
+                })
+                .sort(Comparator.comparing(Message::getCreatedAt));
     }
 
 
@@ -58,29 +72,20 @@ public class MessagesService {
         return createdMessageDto;
     }
 
+
     @Transactional
     public Mono<CreatedMessageDto> save(CreateMessagePayload createMessagePayload) {
         return chatsService.existsById(createMessagePayload.chatId())
-                .flatMap(isExists -> {
-                    if (!isExists) {
-                        return Mono.error(new NoSuchUsersChatException("Chat with id " + createMessagePayload.chatId() + " not found"));
-                    }
-                    Message message = new Message();
-                    message.setCreatedAt(Timestamp.from(Instant.now()));
-                    message.setContent(createMessagePayload.content());
-                    message.setType(
-                            (createMessagePayload.attachments() == null || createMessagePayload.attachments().isEmpty())
-                                    ? MessageType.TEXT
-                                    : MessageType.FILE
-                    );
-                    message.setSenderId(createMessagePayload.senderId());
-                    message.setChatId(createMessagePayload.chatId());
-
+                .filter(Boolean::booleanValue)
+                .switchIfEmpty(Mono.error(new NoSuchUsersChatException("Chat with id " + createMessagePayload.chatId() + " not found")))
+                .then(Mono.defer(() -> {
+                    Message message = createMessageFromPayload(createMessagePayload);
                     Mono<Message> savedMessageMono = messagesRepository.save(message);
+
                     Mono<Integer> recipientIdMono = chatsService.findRecipientIdByChatId(
                             createMessagePayload.chatId(),
                             createMessagePayload.senderId()
-                    );
+                    ).switchIfEmpty(Mono.error(new NoSuchRecipientException("Recipient not found for chat " + createMessagePayload.chatId())));
 
                     return Mono.zip(savedMessageMono, recipientIdMono)
                             .flatMap(tuple -> {
@@ -88,41 +93,46 @@ public class MessagesService {
                                 Integer recipientId = tuple.getT2();
                                 savedMessage.setRecipientId(recipientId);
 
-                                CreatedMessageDto createdMessageDto = createMessageDto(savedMessage);
-
-                                if (createMessagePayload.attachments() == null || createMessagePayload.attachments().isEmpty()) {
-                                    return Mono.just(createdMessageDto);
-                                } else {
-                                    log.info("Saving attachments to database for messageId: {}", savedMessage.getId());
-                                    return saveAttachmentsPayloadsToDatabase(createMessagePayload.attachments(), savedMessage.getId())
-                                            .map(savedAttachments -> {
-                                                createdMessageDto.setAttachments(savedAttachments);
-                                                return createdMessageDto;
-                                            });
-                                }
-                            })
-                            .switchIfEmpty(Mono.error(new NoSuchRecipientException("Recipient not found for chat " + createMessagePayload.chatId())));
-                });
+                                return saveAttachmentsPayloadsToDatabase(createMessagePayload.attachments(), savedMessage.getId())
+                                        .map(savedAttachments -> {
+                                            CreatedMessageDto dto = createMessageDto(savedMessage);
+                                            dto.setAttachments(savedAttachments);
+                                            dto.setType(message.getType());
+                                            return dto;
+                                        });
+                            });
+                }));
     }
 
-    private Mono<List<Attachment>> saveAttachmentsPayloadsToDatabase(List<CreateAttachmentPayload> createAttachmentPayloads, long messageId) {
-        List<Attachment> attachments = createAttachmentPayloads
-                .stream()
-                .map(creatingAttachmentPayload -> {
+    private Message createMessageFromPayload(CreateMessagePayload payload) {
+        Message message = new Message();
+        message.setCreatedAt(Timestamp.from(Instant.now()));
+        message.setContent(payload.content());
+        message.setType(
+                (payload.attachments() == null || payload.attachments().isEmpty())
+                        ? MessageType.TEXT
+                        : MessageType.FILE
+        );
+        message.setSenderId(payload.senderId());
+        message.setChatId(payload.chatId());
+        return message;
+    }
+
+    private Mono<List<Attachment>> saveAttachmentsPayloadsToDatabase(List<CreateAttachmentPayload> attachmentPayloads, long messageId) {
+        if (attachmentPayloads == null || attachmentPayloads.isEmpty()) {
+            return Mono.just(Collections.emptyList());
+        }
+
+        List<Attachment> attachments = attachmentPayloads.stream()
+                .map(payload -> {
                     Attachment attachment = new Attachment();
                     attachment.setMessageId(messageId);
-                    attachment.setUrl(creatingAttachmentPayload.url());
-                    attachment.setMimeType(creatingAttachmentPayload.mimeType());
+                    attachment.setFileId(payload.fileId());
+                    attachment.setMimeType(payload.mimeType());
                     return attachment;
                 }).toList();
-        return attachmentRepository
-                .saveAll(attachments)
-                .collectList();
-    }
 
-    private Mono<Boolean> chatIsGroup(int chatId) {
-        return chatsService.findById(chatId)
-                .map(Chat::isGroup);
+        return attachmentRepository.saveAll(attachments).collectList();
     }
 
     public Mono<Void> deleteById(long id) {

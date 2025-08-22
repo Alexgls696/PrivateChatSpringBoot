@@ -424,6 +424,220 @@ body {
     font-style: normal;
 }
 
+.attach-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.6em;
+    color: #888;
+    cursor: pointer;
+    padding: 0 12px;
+    transition: color 0.2s ease;
+}
+
+.attach-btn:hover {
+    color: #3498db;
+}
+
+/* Контейнер для превью перед отправкой */
+.attachment-preview-container {
+    padding: 0 15px 10px 15px;
+    background: #f9f9f9;
+    border-top: 1px solid #eee;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    border-radius: 0 0 8px 8px; /* Скругляем нижние углы, если форма сверху */
+}
+
+/* Отдельный элемент превью */
+.attachment-preview-item {
+    position: relative;
+    padding: 5px;
+    background: #e9e9e9;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+}
+
+/* Превью для изображений */
+.attachment-preview-item img {
+    height: 40px;
+    width: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+/* Индикатор загрузки */
+.attachment-preview-item.loading {
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { background-color: #e9e9e9; }
+    50% { background-color: #dcdcdc; }
+    100% { background-color: #e9e9e9; }
+}
+
+/* Кнопка удаления превью */
+.remove-attachment-btn {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #333;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 12px;
+    line-height: 18px;
+    text-align: center;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.remove-attachment-btn:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* --- СТИЛИ ДЛЯ ВЛОЖЕНИЙ ВНУТРИ СООБЩЕНИЙ --- */
+
+/* Общий контейнер для вложений в сообщении */
+.attachments-container {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 8px;
+}
+
+
+.attachment-item.image-attachment {
+    display: block;
+    max-width: 250px;
+    border-radius: 12px;
+    overflow: hidden;
+    background-color: #e9ecef;
+    background-image: linear-gradient(90deg, #e9ecef, #f6f7f8, #e9ecef);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.attachment-item.image-attachment img {
+    display: block; /* Убирает лишние отступы под картинкой */
+    width: 100%; /* Заставляет изображение заполнять контейнер по ширине */
+    height: auto;
+}
+
+.attachment-item.image-attachment img:hover {
+    filter: brightness(0.9);
+}
+
+/* Вложение-файл */
+.attachment-item.file-attachment {
+    background: rgba(0, 0, 0, 0.05);
+    padding: 10px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.attachment-item.image-attachment a {
+    display: block;
+    font-size: 0;
+}
+
+.message.sent .attachment-item.file-attachment {
+    background: rgba(255, 255, 255, 0.15); /* Фон для отправленных сообщений */
+}
+
+.file-icon {
+    font-size: 1.8em;
+}
+
+.file-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden; /* Чтобы длинные имена не вылезали */
+}
+
+.file-name {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-download-btn {
+    font-size: 0.8em;
+    color: #3498db;
+    text-decoration: none;
+    background: none;
+    border: none;
+    padding: 2px 0;
+    cursor: pointer;
+    text-align: left;
+}
+
+.file-download-btn:hover {
+    text-decoration: underline;
+}
+
+.message.sent .file-download-btn {
+    color: #fff;
+}
+
+.file-download-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.attachment-item.error {
+    color: #e74c3c;
+    font-style: italic;
+    font-size: 0.9em;
+    padding: 10px;
+}
+
+.message.sent .file-download-link {
+    color: #fff;
+    text-decoration: underline;
+}
+
+.file-download-link:hover {
+    text-decoration: underline;
+}
+
+.message-form {
+    border-radius: 0;
+}
+
+.chat-window {
+    position: relative;
+}
+
+.attachment-preview-container:not(:empty) + .message-form {
+    border-radius: 0;
+}
+
+.attachment-preview-container:empty + .message-form {
+    border-radius: 0 0 8px 8px;
+}
+
 @media (max-width: 768px) {
     .container {
         max-width: 100%;

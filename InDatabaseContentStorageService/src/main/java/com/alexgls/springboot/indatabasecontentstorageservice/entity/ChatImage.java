@@ -18,4 +18,6 @@ public class ChatImage {
     private int id;
 
     private String path;
+
+    private String filename;
 }

@@ -5,7 +5,8 @@
 create table images
 (
     id   integer primary key generated always as identity,
-    path varchar(256)
+    path varchar(256),
+    filename varchar(256)
 );
 
 create table avatars

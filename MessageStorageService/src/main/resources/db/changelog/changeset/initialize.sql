@@ -30,7 +30,19 @@ create table messages
     created_at timestamp,
     updated_at timestamp,
     is_read    boolean,
-    read_at    timestamp
+    read_at    timestamp,
+    message_type varchar(32)
 );
+
+create table attachments(
+    attachment_id bigint primary key generated always as identity,
+    message_id integer references messages(message_id),
+    file_id bigint,
+    mime_type varchar(256)
+);
+
+create index message_type_index ON  messages using hash (message_type);
+
+
 
 --Создание триггера и триггерной функции

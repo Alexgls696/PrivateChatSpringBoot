@@ -1,6 +1,5 @@
 package com.alexgls.springboot.messagestorageservice.service;
 
-import com.alexgls.springboot.messagestorageservice.controller.ChatsController;
 import com.alexgls.springboot.messagestorageservice.dto.ChatDto;
 import com.alexgls.springboot.messagestorageservice.entity.Chat;
 import com.alexgls.springboot.messagestorageservice.entity.Message;
@@ -90,8 +89,9 @@ public class ChatsService {
         return chatsRepository.existsById(id);
     }
 
-    public Mono<Chat> findById(int id) {
-        return chatsRepository.findById(id);
+    public Mono<ChatDto> findById(int id) {
+        return chatsRepository.findById(id)
+                .map(this::convertToDto);
     }
 
     public Mono<Integer> findRecipientIdByChatId(int chatId, int senderId) {

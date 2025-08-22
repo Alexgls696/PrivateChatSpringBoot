@@ -11,6 +11,5 @@ import lombok.ToString;
 @ToString
 public class ChatImage {
     private int id;
-
     private String path;
 }

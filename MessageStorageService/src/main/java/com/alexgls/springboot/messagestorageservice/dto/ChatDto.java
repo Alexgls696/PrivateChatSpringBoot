@@ -25,4 +25,5 @@ public class ChatDto {
     private Timestamp updatedAt;
 
     private Message lastMessage;
+
 }

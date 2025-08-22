@@ -30,6 +30,9 @@
                 <p class="placeholder">Выберите чат, чтобы начать общение</p>
             </div>
             <form id="messageForm" class="message-form">
+                <button type="button" id="attachFileBtn" class="attach-btn" title="Прикрепить файл">📎</button>
+                <input type="file" id="fileInput" hidden />
+
                 <input
                         type="text"
                         id="messageInput"
@@ -37,8 +40,9 @@
                         placeholder="Введите сообщение..."
                         autocomplete="off"
                 />
-                <button type="submit" class="send-btn">Отправить</button>
+                <button type="submit" id="sendBtn" class="send-btn">Отправить</button>
             </form>
+            <div id="attachmentPreviewContainer" class="attachment-preview-container"></div>
         </section>
     </div>
 </div>

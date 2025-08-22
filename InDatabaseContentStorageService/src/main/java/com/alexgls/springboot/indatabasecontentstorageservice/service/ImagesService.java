@@ -1,5 +1,6 @@
 package com.alexgls.springboot.indatabasecontentstorageservice.service;
 
+import com.alexgls.springboot.indatabasecontentstorageservice.dto.CreateFileMetadataRequest;
 import com.alexgls.springboot.indatabasecontentstorageservice.entity.ChatImage;
 
 public interface ImagesService {
@@ -7,5 +8,5 @@ public interface ImagesService {
 
     void deleteById(int id);
 
-    ChatImage save(String path);
+    ChatImage save(CreateFileMetadataRequest createFileMetadataRequest);
 }

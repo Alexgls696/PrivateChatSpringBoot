@@ -29,6 +29,11 @@ public class ChatsController {
     @Value("${values.page-size}")
     private Integer pageSize;
 
+    @GetMapping("/{id}")
+    public Mono<ChatDto> getChatById(@PathVariable int id) {
+        return chatsService.findById(id);
+    }
+
     @GetMapping("/find-by-id/{page}")
     public Flux<ChatDto> findUserChatsById(
             @PathVariable("page") int page,
@@ -72,7 +77,13 @@ public class ChatsController {
         log.info("Find user by chat id: {}", chatId);
 
         return chatsService.findRecipientIdByChatId(chatId, userId)
-                .flatMap(recipientId -> authWebClient.findUserById(recipientId, token));
+                .flatMap(recipientId -> {
+                    return authWebClient.findUserById(recipientId, token);
+                }).map(user->{
+                    log.info("Found user: {}", user);
+                    return user;
+                });
+
     }
 
     @GetMapping("/{id}/participants")

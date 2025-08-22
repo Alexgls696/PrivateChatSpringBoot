@@ -1,6 +1,7 @@
 package com.alexgls.springboot.client;
 
 import com.alexgls.springboot.dto.ChatImage;
+import com.alexgls.springboot.dto.CreateFileMetadataRequest;
 import com.alexgls.springboot.exception.InDatabaseServiceException;
 import com.alexgls.springboot.exception.NoSuchImageException;
 import lombok.RequiredArgsConstructor;
@@ -35,12 +36,12 @@ public class InDatabaseStorageServiceRestClientImpl implements InDatabaseStorage
     }
 
     @Override
-    public ChatImage saveChatImage(String path) {
+    public ChatImage saveChatImage(CreateFileMetadataRequest createFileMetadataRequest) {
         try {
             return restClient
                     .post()
                     .uri("/api/images")
-                    .body(path)
+                    .body(createFileMetadataRequest)
                     .retrieve()
                     .body(ChatImage.class);
         } catch (HttpClientErrorException exception) {

@@ -6,5 +6,15 @@ yandex:
 server:
   port: 8088
 
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:8085/.well-known/jwks.json
+
+frontend:
+  url: http://localhost:8090
+
 services:
   in-database-image-service: http://localhost:8089

@@ -1,5 +1,6 @@
 package com.alexgls.springboot.indatabasecontentstorageservice.service;
 
+import com.alexgls.springboot.indatabasecontentstorageservice.dto.CreateFileMetadataRequest;
 import com.alexgls.springboot.indatabasecontentstorageservice.entity.ChatImage;
 import com.alexgls.springboot.indatabasecontentstorageservice.exception.NoSuchImageException;
 import com.alexgls.springboot.indatabasecontentstorageservice.repository.ImagesRepository;
@@ -24,9 +25,10 @@ public class ImagesServiceImpl implements ImagesService {
     }
 
     @Override
-    public ChatImage save(String path) {
+    public ChatImage save(CreateFileMetadataRequest createFileMetadataRequest) {
         ChatImage chatImage = new ChatImage();
-        chatImage.setPath(path);
+        chatImage.setPath(createFileMetadataRequest.path());
+        chatImage.setFilename(createFileMetadataRequest.filename());
         return imagesRepository.save(chatImage);
     }
 }

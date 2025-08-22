@@ -1,6 +1,7 @@
 package com.alexgls.springboot.messagestorageservice.dto;
 
 import com.alexgls.springboot.messagestorageservice.entity.Attachment;
+import com.alexgls.springboot.messagestorageservice.entity.MessageType;
 import lombok.*;
 
 import java.sql.Timestamp;
@@ -29,6 +30,8 @@ public class CreatedMessageDto {
     private boolean isRead;
 
     private Timestamp readAt;
+
+    private MessageType type;
 
     private List<Attachment> attachments;
 

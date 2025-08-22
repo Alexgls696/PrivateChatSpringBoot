@@ -8,5 +8,6 @@ public interface StorageService {
 
     String getDownLoadFilePath(String path);
 
+    String getDownloadPathById(int id);
 }
 

@@ -48,4 +48,6 @@ public class Message {
     @Transient
     private int recipientId;
 
+    @Transient
+    private List<Attachment>attachments;
 }

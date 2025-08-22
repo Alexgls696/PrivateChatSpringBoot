@@ -15,6 +15,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeModalBtn = document.getElementById('closeModalBtn');
     const userListContainer = document.getElementById('userListContainer');
 
+    const attachFileBtn = document.getElementById('attachFileBtn');
+    const fileInput = document.getElementById('fileInput');
+    const attachmentPreviewContainer = document.getElementById('attachmentPreviewContainer');
+    let pendingAttachments = [];
+
+
     // --- Состояние приложения ---
     let activeChatId = null;
     let chatListPage = 0;
@@ -30,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const API_URL = 'http://localhost:8086'; // URL для WebSocket
     const API_FETCH_URL = 'http://localhost:8087'; // URL для REST API
     const API_USERS_URL = 'http://localhost:8085/api'; // REST API пользователей
+    const API_STORAGE_URL = 'http://localhost:8088/api/storage'; //URL хранилища
 
 
     const chatManager = {
@@ -68,17 +75,18 @@ document.addEventListener('DOMContentLoaded', () => {
             this.isConnected = true;
             this.retryCount = 0;
 
-            this.stompClient.subscribe(`/user/queue/messages`, (message) => {
+            this.stompClient.subscribe(`/user/queue/messages`, async (message) => { // !!! Делаем обработчик async !!!
                 try {
-                    const msg = JSON.parse(message.body);
+                    const newMsg = JSON.parse(message.body);
 
-                    if (msg.chatId === activeChatId) {
-                        const isSentByMe = msg.senderId === currentUserId;
+                    await updateOrFetchChatInList(newMsg);
 
-                        addMessageToUI(msg, isSentByMe);
+                    if (newMsg.chatId === activeChatId) {
+                        const isSentByMe = newMsg.senderId === currentUserId;
+                        addMessageToUI(newMsg, isSentByMe);
 
                         if (!isSentByMe) {
-                            markMessagesAsRead([msg]);
+                            markMessagesAsRead([newMsg]);
                         }
                     }
                 } catch (error) {
@@ -120,22 +128,47 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => this.connect(), delay);
         },
 
-        sendMessage: function (content) {
+        sendMessageWithAttachments: function(content, attachments) {
             if (this.stompClient && this.isConnected && activeChatId) {
-
                 const chatMessage = {
                     chatId: activeChatId,
-                    content: content
+                    content: content,
+                    attachments: attachments // attachments - это массив [{ attachmentId: ..., mimeType: ... }]
                 };
-
                 this.stompClient.send("/app/chat.send", {}, JSON.stringify(chatMessage));
-
-                messageInput.value = '';
             } else {
                 alert("Нет подключения для отправки сообщения.");
             }
         },
     };
+
+    async function updateOrFetchChatInList(newMsg) {
+        const chatId = newMsg.chatId;
+        const existingChatItemEl = chatListEl.querySelector(`[data-chat-id='${chatId}']`);
+
+        if (existingChatItemEl) {
+            const lastMsgEl = existingChatItemEl.querySelector('.last-message');
+            const timeEl = existingChatItemEl.querySelector('.message-time');
+
+            if (lastMsgEl) {
+                lastMsgEl.textContent = newMsg.content || 'Вложение';
+            }
+            if (timeEl) {
+                timeEl.textContent = `Отправлено: ${formatDate(newMsg.createdAt)}`;
+            }
+            chatListEl.prepend(existingChatItemEl);
+        }
+        else {
+            try {
+                const newChatDto = await apiFetch(`${API_FETCH_URL}/api/chats/${chatId}`);
+                const newChatItemEl = await createChatItem(newChatDto);
+                chatListEl.prepend(newChatItemEl);
+
+            } catch (error) {
+                console.error(`Не удалось загрузить информацию о новом чате #${chatId}:`, error);
+            }
+        }
+    }
 
     function renderUsers(users) {
         userListContainer.innerHTML = '';
@@ -144,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         users.forEach(user => {
-            if (user.id === currentUserId) return; // Пропускаем себя
+            if (user.id === currentUserId) return;
 
             const userDiv = document.createElement('div');
             userDiv.className = 'user-item';
@@ -299,7 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 })(),
                 loadMessages(chat.chatId, messagePage)
             ]);
-
+            console.log(messages);
             renderMessages(messages);
 
             const unreadMessages = messages.filter(msg => !msg.read && msg.senderId !== currentUserId);
@@ -335,60 +368,113 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function renderMessages(messages) {
+    async function renderMessages(messages) {
         messagesEl.innerHTML = '';
         if (!messages || messages.length === 0) {
             messagesEl.innerHTML = '<p class="placeholder">Сообщений пока нет. Напишите первым!</p>';
             return;
         }
-        messages.forEach(msg => {
+
+        const fragment = document.createDocumentFragment();
+
+        for (const msg of messages) {
             const isSentByMe = msg.senderId === currentUserId;
-            addMessageToUI(msg, isSentByMe, true);
-        });
+            const msgDiv = await createMessageElement(msg, isSentByMe);
+            fragment.appendChild(msgDiv);
+        }
+
+        messagesEl.appendChild(fragment);
+
         messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
-    function addMessageToUI(msg, isSentByMe, prepend = false) {
+
+
+    async function createMessageElement(msg, isSentByMe) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${isSentByMe ? 'sent' : 'received'}`;
+        msgDiv.dataset.messageId = msg.id;
+
+        const messageType = msg.type || msg.messageType;
+        const senderName = isSentByMe ? '' : (participantCache[msg.senderId] || `Пользователь #${msg.senderId}`);
+        const senderHtml = senderName ? `<div class="message-sender">${senderName}</div>` : '';
+
+        let attachmentsHtml = '';
+        if (msg.attachments && msg.attachments.length > 0) {
+            attachmentsHtml = '<div class="attachments-container">';
+
+            const attachmentItemsHtml = await Promise.all(msg.attachments.map(async (att) => {
+                const getLinkUrl = `${API_STORAGE_URL}/download/by-id?id=${att.fileId}`;
+
+                try {
+
+                    const realDownloadUrl = await apiFetch(getLinkUrl);
+
+                    if (att.mimeType && att.mimeType.startsWith('image/')) {
+                        // Используем полученную ссылку для отображения картинки
+                        return `
+                        <div class="attachment-item image-attachment">
+                            <a href="${realDownloadUrl.href}" target="_blank" rel="noopener noreferrer">
+                                <img src="${realDownloadUrl.href}" alt="Вложение" loading="lazy">
+                            </a>
+                        </div>`;
+                    } else {
+                        // Используем полученную ссылку для кнопки "Скачать"
+                        // Атрибут `download` заставит браузер скачать файл, а не пытаться открыть его.
+                        return `
+                        <div class="attachment-item file-attachment">
+                            <div class="file-icon">📁</div>
+                            <div class="file-info">
+                                <span class="file-name">${msg.content || 'Файл'}</span>
+                                <a href="${realDownloadUrl.href}" class="file-download-link" download>Скачать</a>
+                            </div>
+                        </div>`;
+                    }
+                } catch (error) {
+                    // Единый блок обработки ошибок для всех типов вложений
+                    console.error(`Не удалось получить ссылку для вложения (fileId: ${att.fileId}):`, error);
+                    return `<div class="attachment-item file-attachment error">Не удалось загрузить вложение</div>`;
+                }
+            }));
+
+            attachmentsHtml += attachmentItemsHtml.join('');
+            attachmentsHtml += '</div>';
+        }
+
+        const contentHtml = messageType === 'TEXT'
+            ? `<div class="message-content">${msg.content}</div>`
+            : (msg.content && attachmentsHtml ? `<div class="message-content">${msg.content}</div>` : '');
+
+        const statusText = isSentByMe ? (msg.read ? 'Прочитано' : 'Доставлено') : '';
+        const statusClass = isSentByMe && msg.read ? 'read' : '';
+
+        msgDiv.innerHTML = `
+        ${senderHtml}
+        ${attachmentsHtml}
+        ${contentHtml}
+        <div class="message-meta">
+            <span>${formatDate(msg.createdAt)}</span>
+            <span class="message-status ${statusClass}">${statusText}</span>
+        </div>
+    `;
+
+        return msgDiv;
+    }
+
+    async function addMessageToUI(msg, isSentByMe, prepend = false) {
         const placeholder = messagesEl.querySelector('.placeholder');
         if (placeholder) placeholder.remove();
 
         const wasScrolledToBottom = messagesEl.scrollHeight - messagesEl.clientHeight <= messagesEl.scrollTop + 1;
 
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `message ${isSentByMe ? 'sent' : 'received'}`;
-        msgDiv.dataset.messageId = msg.id;
-
-        const senderName = isSentByMe ? 'Вы' : (participantCache[msg.senderId] || `Пользователь #${msg.senderId}`);
-
-        if (msg.isPending) {
-            msgDiv.innerHTML = `
-            <div class="message-content">${msg.content}</div>
-            <div class="message-meta">
-                <span>Отправка...</span>
-                <span class="message-status pending-animation"></span> 
-            </div>
-        `;
-        } else {
-            const statusText = isSentByMe ? (msg.read ? 'Прочитано' : 'Доставлено') : '';
-            const statusClass = isSentByMe && msg.read ? 'read' : '';
-
-            msgDiv.innerHTML = `
-            <div class="message-sender">${senderName}</div>
-            <div class="message-content">${msg.content}</div>
-            <div class="message-meta">
-                <span>${formatDate(msg.createdAt)}</span>
-                <span class="message-status ${statusClass}">${statusText}</span>
-            </div>
-        `;
-        }
+        const msgDiv = await createMessageElement(msg, isSentByMe);
 
         if (prepend) {
             messagesEl.prepend(msgDiv);
         } else {
             messagesEl.appendChild(msgDiv);
         }
-
-        if (wasScrolledToBottom) {
+        if (wasScrolledToBottom && !prepend) {
             messagesEl.scrollTop = messagesEl.scrollHeight;
         }
     }
@@ -413,6 +499,88 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function setFormEnabled(enabled) {
+        messageInput.disabled = !enabled;
+        sendBtn.disabled = !enabled;
+        attachFileBtn.disabled = !enabled;
+    }
+
+    // Отображение превью
+    function addAttachmentToPreview(file, fileId, mimeType) {
+        const previewEl = document.createElement('div');
+        previewEl.className = 'attachment-preview-item';
+        previewEl.dataset.fileId = fileId;
+
+        const isImage = mimeType.startsWith('image/');
+        const previewContent = isImage
+            ? `<img src="${URL.createObjectURL(file)}" alt="${file.name}">`
+            : `<span>📁 ${file.name}</span>`;
+
+        previewEl.innerHTML = `
+            ${previewContent}
+            <button class="remove-attachment-btn">&times;</button>
+        `;
+
+        // Добавляем обработчик на кнопку удаления
+        previewEl.querySelector('.remove-attachment-btn').addEventListener('click', () => {
+            removeAttachmentFromPreview(fileId);
+        });
+
+        attachmentPreviewContainer.appendChild(previewEl);
+    }
+
+    // Удаление превью
+    function removeAttachmentFromPreview(fileId) {
+        pendingAttachments = pendingAttachments.filter(att => att.attachmentId !== fileId);
+        const previewEl = attachmentPreviewContainer.querySelector(`[data-file-id='${fileId}']`);
+        if (previewEl) {
+            previewEl.remove();
+        }
+    }
+
+    // Главная функция загрузки файла
+    async function uploadFile(file) {
+        setFormEnabled(false); // Блокируем форму
+        const tempId = `temp-${Date.now()}`;
+        const tempPreviewEl = document.createElement('div');
+        tempPreviewEl.className = 'attachment-preview-item loading';
+        tempPreviewEl.dataset.fileId = tempId;
+        tempPreviewEl.innerHTML = `<span>⏳ Загрузка: ${file.name}</span>`;
+        attachmentPreviewContainer.appendChild(tempPreviewEl);
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch(`${API_STORAGE_URL}/upload`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` },
+                body: formData
+            });
+
+            if (!response.ok) throw new Error('Ошибка сервера при загрузке файла.');
+
+            const result = await response.json(); // Ожидаем { id: ..., path: ... }
+
+            tempPreviewEl.remove();
+            addAttachmentToPreview(file, result.id, file.type);
+
+            // Добавляем информацию о файле в массив ожидания
+            pendingAttachments.push({
+                mimeType: file.type,
+                fileId: result.id
+            });
+
+        } catch (error) {
+            console.error('Ошибка загрузки файла:', error);
+            tempPreviewEl.remove(); // Удаляем временное превью при ошибке
+            alert('Не удалось загрузить файл.');
+        } finally {
+            setFormEnabled(true); // Разблокируем форму в любом случае
+            fileInput.value = ''; // Сбрасываем input
+        }
+    }
+
     // --- Обработчики событий ---
 
     closeChatBtn.addEventListener('click', () => {
@@ -421,7 +589,6 @@ document.addEventListener('DOMContentLoaded', () => {
         [...chatListEl.children].forEach(li => li.classList.remove('active'));
     });
 
-    // В файле chats.js
 
     function debounce(func, delay) {
         let timeout;
@@ -457,10 +624,21 @@ document.addEventListener('DOMContentLoaded', () => {
     messageForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const content = messageInput.value.trim();
-        if (content) {
-            console.log(content)
-            chatManager.sendMessage(content);
+
+        if (content || pendingAttachments.length > 0) {
+            chatManager.sendMessageWithAttachments(content, pendingAttachments);
             messageInput.value = '';
+            attachmentPreviewContainer.innerHTML = '';
+            pendingAttachments = [];
+        }
+    });
+
+    attachFileBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', (e) => {
+        const files = e.target.files;
+        if (files && files.length > 0) {
+            uploadFile(files[0]);
         }
     });
 

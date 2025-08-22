@@ -1,5 +1,6 @@
 package com.alexgls.springboot.indatabasecontentstorageservice.controller;
 
+import com.alexgls.springboot.indatabasecontentstorageservice.dto.CreateFileMetadataRequest;
 import com.alexgls.springboot.indatabasecontentstorageservice.entity.ChatImage;
 import com.alexgls.springboot.indatabasecontentstorageservice.service.ImagesService;
 import lombok.RequiredArgsConstructor;
@@ -25,9 +26,9 @@ public class ImagesController {
     }
 
     @PostMapping
-    public ResponseEntity<ChatImage> saveChatImage(@RequestBody String path, UriComponentsBuilder uriBuilder) {
-        log.info("Save chat image: {}", path);
-        ChatImage created = imagesService.save(path);
+    public ResponseEntity<ChatImage> saveChatImage(@RequestBody CreateFileMetadataRequest createFileMetadataRequest, UriComponentsBuilder uriBuilder) {
+        log.info("Save chat image: {}", createFileMetadataRequest);
+        ChatImage created = imagesService.save(createFileMetadataRequest);
         return ResponseEntity
                 .created(uriBuilder.replacePath("/api/images/{id}")
                         .build(Map.of("id", created.getId())))

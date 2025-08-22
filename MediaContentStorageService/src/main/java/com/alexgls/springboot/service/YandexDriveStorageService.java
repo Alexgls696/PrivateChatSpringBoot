@@ -4,6 +4,8 @@ import com.alexgls.springboot.client.InDatabaseStorageServiceRestClient;
 import com.alexgls.springboot.client.YandexDriveStorageRestClient;
 import com.alexgls.springboot.client.response.DownloadFileResponse;
 import com.alexgls.springboot.client.response.UploadFilePathResponse;
+import com.alexgls.springboot.dto.ChatImage;
+import com.alexgls.springboot.dto.CreateFileMetadataRequest;
 import com.alexgls.springboot.dto.CreateFileResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,12 +43,22 @@ public class YandexDriveStorageService implements StorageService {
         log.info("upload path from yandex {}", uploadPathResponse);
         saveFileToYandexDrive(file, uploadPathResponse);
         log.info("Saving path to database... {}", filepathToDatabase);
-        inDatabaseStorageServiceRestClient.saveChatImage(filepathToDatabase);
-        return new CreateFileResponse(filepathToDatabase, Timestamp.from(Instant.now()));
+        ChatImage chatImage = inDatabaseStorageServiceRestClient.saveChatImage(new CreateFileMetadataRequest(filepathToDatabase,file.getName()));
+        return new CreateFileResponse(chatImage.getId(), filepathToDatabase, Timestamp.from(Instant.now()));
     }
 
     @Override
     public String getDownLoadFilePath(String path) {
+        return findFileHrefInYandex(path);
+    }
+
+    @Override
+    public String getDownloadPathById(int id) {
+        String path = inDatabaseStorageServiceRestClient.findChatImageById(id).getPath();
+        return findFileHrefInYandex(path);
+    }
+
+    private String findFileHrefInYandex(String path) {
         path = baseUrl + "/download?path=" + path;
         DownloadFileResponse downloadFileResponse = yandexDriveRestClient.getDownloadFileUrl(path);
         log.info("download file url from yandex {}", downloadFileResponse);
@@ -58,17 +70,6 @@ public class YandexDriveStorageService implements StorageService {
         String format = fileName.substring(lastPointIndex);
         String randomFileName = UUID.randomUUID() + format;
         return applicationPath + "/images/" + randomFileName;
-    }
-
-    private String getFullFilePath(String fileName) {
-        StringBuilder pathBuilder = new StringBuilder();
-        int lastPointIndex = fileName.lastIndexOf(".");
-        String format = fileName.substring(lastPointIndex);
-        String randomFileName = UUID.randomUUID() + format;
-        String fullPath = applicationPath + "/images/" + randomFileName;
-        pathBuilder.append(baseUrl).append("/upload?path=").append(fullPath);
-        log.info("result path {}", pathBuilder);
-        return pathBuilder.toString();
     }
 
     private void saveFileToYandexDrive(MultipartFile file, UploadFilePathResponse response) {

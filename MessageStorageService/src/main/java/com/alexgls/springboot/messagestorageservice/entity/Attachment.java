@@ -20,8 +20,8 @@ public class Attachment {
     @Column(value = "message_id")
     private Long messageId;
 
-    @Column(value = "url")
-    private String url;
+    @Column(value = "file_id")
+    private Long fileId;
 
     @Column(value = "mime_type")
     private String mimeType;
