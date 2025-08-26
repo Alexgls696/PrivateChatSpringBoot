@@ -17,7 +17,7 @@ public class GlobalExceptionHandler {
     public Mono<ResponseEntity<?>>handleRuntimeException(RuntimeException exception) {
         log.warn("Возникло исключение: {}", exception.getMessage());
         return Mono.just(ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Ошибка. " + exception.getMessage())));
     }
 }

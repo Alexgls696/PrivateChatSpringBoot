@@ -1,6 +1,5 @@
 package ru.alexgls.springboot.controller;
 
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -12,7 +11,11 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import ru.alexgls.springboot.dto.GetUserDto;
+import ru.alexgls.springboot.exceptions.InvalidJwtException;
+import ru.alexgls.springboot.exceptions.NoSuchAuthException;
 import ru.alexgls.springboot.service.UsersService;
+
+import java.util.Objects;
 
 @RestController
 @RequestMapping("api/users")
@@ -23,7 +26,7 @@ public class UsersController {
     private final UsersService usersService;
 
     @GetMapping("initials/{id}")
-    public Mono<String> findUserInitialsById(@PathVariable("id") int id, Authentication authentication) {
+    public Mono<String> findUserInitialsById(@PathVariable("id") int id) {
         log.info("Find user initials by id {}", id);
         return usersService.findUserInitialsById(id);
     }
@@ -42,10 +45,18 @@ public class UsersController {
 
     @GetMapping("/me")
     public Mono<GetUserDto> getCurrentUser(Authentication authentication) {
+        log.info("Try to get current user");
+        if (Objects.isNull(authentication) || Objects.isNull(authentication.getPrincipal())) {
+            return Mono.error(() -> new NoSuchAuthException("User is not authenticated"));
+        }
         Jwt jwt = (Jwt) authentication.getPrincipal();
-        Integer userId = Integer.parseInt(jwt.getClaim("userId").toString());
-        log.info("Get current user");
-        return usersService.findUserDtoById(userId);
+        if (jwt.getClaims().containsKey("userId")) {
+            int userId = Integer.parseInt(jwt.getClaim("userId").toString());
+            log.info("Get current user with id {}", userId);
+            return usersService.findUserDtoById(userId);
+        } else {
+            return Mono.error(() -> new InvalidJwtException("Jwt is invalid"));
+        }
     }
 
 }
