@@ -1,9 +1,6 @@
 package ru.alexgls.springboot.controller;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.Get;
 import org.springframework.http.HttpStatus;
@@ -17,6 +14,7 @@ import ru.alexgls.springboot.config.JwtUtil;
 import ru.alexgls.springboot.dto.*;
 import ru.alexgls.springboot.entity.RefreshToken;
 import ru.alexgls.springboot.entity.User;
+import ru.alexgls.springboot.exceptions.RefreshTokenNotFoundException;
 import ru.alexgls.springboot.service.RefreshTokenService;
 import ru.alexgls.springboot.service.UsersService;
 
@@ -43,7 +41,8 @@ public class AuthController {
     @Getter
     @Setter
     @AllArgsConstructor
-    public class JwtResponse {
+    @EqualsAndHashCode
+    public static class JwtResponse {
         private String accessToken;
         private String refreshToken;
     }
@@ -72,7 +71,7 @@ public class AuthController {
                                 });
                     } else {
                         return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                                .body(Map.of("error", "Invalid username or password")));
+                                .body(Map.of("error", "Неверное имя пользователя или пароль")));
                     }
                 });
     }
@@ -82,11 +81,10 @@ public class AuthController {
     public Mono<ResponseEntity<?>> refreshToken(@RequestBody RefreshTokenRequest request) {
         String requestRefreshToken = request.getRefreshToken();
         return refreshTokenService.findByToken(requestRefreshToken)
-                .switchIfEmpty(Mono.error(new RuntimeException("Refresh token не найден в базе данных.")))
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new RefreshTokenNotFoundException("Refresh token не найден в базе данных."))))
                 .flatMap(refreshTokenService::verifyExpiration) // verifiedToken - это старый токен
                 .flatMap(verifiedToken -> {
                     Mono<RefreshToken> newRefreshTokenMono = refreshTokenService.createRefreshToken(verifiedToken.getUserId());
-
                     Mono<Void> deleteOldTokenMono = refreshTokenService.deleteByToken(verifiedToken.getToken());
                     return deleteOldTokenMono.then(newRefreshTokenMono);
                 })
@@ -107,7 +105,7 @@ public class AuthController {
                 .map(dto -> ResponseEntity
                         .created(componentsBuilder.replacePath("/auth/register/{id}")
                                 .build(Map.of("id", dto.id())))
-                        .build());
+                        .body(dto));
     }
 
     @PostMapping("/validate")
@@ -116,5 +114,4 @@ public class AuthController {
         return ResponseEntity
                 .ok(jwtUtil.validateTokenAndGetJwtValidationResponse(tokenRequest.getToken()));
     }
-
 }

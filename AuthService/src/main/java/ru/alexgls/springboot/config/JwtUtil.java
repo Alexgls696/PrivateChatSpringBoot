@@ -21,8 +21,6 @@ public class JwtUtil {
 
     private final KeyPairProvider keyProvider;
 
-
-
     public Claims getAllClaimsFromToken(String token) {
         RSAPublicKey publicKey = keyProvider.getPublicKey();
         return Jwts.parserBuilder()
@@ -61,7 +59,7 @@ public class JwtUtil {
                 .setIssuedAt(now)
                 .setIssuer("http://localhost:8085")
                 .setExpiration(exp)
-                .signWith(keyProvider.getPrivateKey(), SignatureAlgorithm.RS256) // Используем асимметричный алгоритм
+                .signWith(keyProvider.getPrivateKey(), SignatureAlgorithm.RS256)
                 .compact();
     }
 

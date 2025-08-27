@@ -16,11 +16,9 @@ import ru.alexgls.springboot.exceptions.InvalidJwtException;
 import ru.alexgls.springboot.exceptions.NoSuchAuthException;
 import ru.alexgls.springboot.service.UsersService;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
