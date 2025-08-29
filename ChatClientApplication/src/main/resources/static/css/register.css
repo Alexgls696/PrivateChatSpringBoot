@@ -1,3 +1,4 @@
+/* Общие стили для страницы */
 body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -5,24 +6,27 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
+    padding: 20px 0; /* Добавляем отступ для маленьких экранов */
 }
 
-.login-container {
+.register-container {
     padding: 20px;
 }
 
-.login-form {
+/* Стили для формы регистрации */
+.register-form {
     background: #fff;
     padding: 40px;
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     width: 100%;
-    max-width: 400px;
+    max-width: 420px; /* Немного увеличим ширину для доп. полей */
     text-align: center;
+    box-sizing: border-box; /* Учитываем padding в общей ширине */
 }
 
-.login-form h2 {
+.register-form h2 {
     margin-top: 0;
     margin-bottom: 10px;
     color: #1d2129;
@@ -35,6 +39,7 @@ body {
     color: #606770;
 }
 
+/* Стили для групп ввода (label + input) */
 .input-group {
     margin-bottom: 20px;
     text-align: left;
@@ -54,7 +59,7 @@ body {
     border-radius: 6px;
     font-size: 16px;
     box-sizing: border-box;
-    transition: border-color 0.3s;
+    transition: border-color 0.3s, box-shadow 0.3s;
 }
 
 .input-group input:focus {
@@ -63,6 +68,7 @@ body {
     box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
 }
 
+/* Стили для кнопки */
 button {
     width: 100%;
     padding: 12px;
@@ -81,18 +87,29 @@ button:hover {
 }
 
 button:disabled {
-    background-color: #95a5a6;
+    background-color: #bdc3c7;
     cursor: not-allowed;
+}
+
+/* Стили для сообщений об ошибках и успехе */
+.message {
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 15px;
 }
 
 .error-message {
     color: #e74c3c;
     background-color: #fbeae5;
     border: 1px solid #e74c3c;
-    padding: 10px;
-    border-radius: 5px;
-    margin-bottom: 20px;
-    text-align: center;
+}
+
+.success-message {
+    color: #27ae60;
+    background-color: #eafaf1;
+    border: 1px solid #27ae60;
 }
 
 .hidden {

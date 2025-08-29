@@ -90,9 +90,7 @@ class AuthControllerTest {
         List<String> roles = List.of("ROLE_USER");
         Flux<String> userRolesFlux = Flux.fromIterable(roles);
 
-        when(usersService.getUserByUsername(loginRequest.username())).thenReturn(existingUserMono);
         when(usersService.checkCredentials(loginRequest.username(), loginRequest.password())).thenReturn(Mono.just(false));
-        when(usersService.getUserRoles(user.getId())).thenReturn(userRolesFlux);
         //when
 
         var result = authController.login(loginRequest);
@@ -102,10 +100,7 @@ class AuthControllerTest {
                 .create(result)
                 .expectNext(responseEntityResult)
                 .verifyComplete();
-
-        verify(usersService).getUserByUsername(loginRequest.username());
         verify(usersService).checkCredentials(loginRequest.username(), loginRequest.password());
-        verify(usersService).getUserRoles(user.getId());
     }
 
     @Test
@@ -170,29 +165,33 @@ class AuthControllerTest {
         //given
         UserRegisterDto userRegisterDto = new UserRegisterDto("Александр", "Глущенко", "alexgls", "encodedPassword", "glualex066@gmail.com");
         GetUserDto getUserDto = new GetUserDto(1, "Александр", "Глущенко", "alexgls");
+        User user = new User(1, "Александр", "Глущенко", "alexgls", "encodedPassword", "glualex066@gmail.com");
+        List<String>roles = List.of("ROLE_USER");
+        String accessToken = "access_token";
+        RefreshToken refreshToken = new RefreshToken(1L, 1, "refresh_token", Instant.now());
         when(usersService.saveUser(userRegisterDto)).thenReturn(Mono.just(getUserDto));
+        when(usersService.getUserByUsername(user.getUsername())).thenReturn(Mono.just(user));
+        when(usersService.getUserRoles(user.getId())).thenReturn(Flux.fromIterable(roles));
+        when(jwtUtil.generateToken(user.getUsername(), user.getId(), roles)).thenReturn(accessToken);
+        when(refreshTokenService.createRefreshToken(refreshToken.getUserId())).thenReturn(Mono.just(refreshToken));
         //when
-        UriComponentsBuilder componentsBuilder =UriComponentsBuilder.fromPath("http://localhost:8080/auth/register");
-        var result = authController.register(userRegisterDto, componentsBuilder);
+        var result = authController.register(userRegisterDto);
         //then
-        ResponseEntity<GetUserDto> responseEntity = ResponseEntity
-                .created(componentsBuilder.replacePath("/auth/register/{id}")
-                        .build(Map.of("id", getUserDto.id()))).body(getUserDto);
+        AuthController.JwtResponse jwtResponse = new AuthController.JwtResponse("access_token", "refresh_token");
+        ResponseEntity<AuthController.JwtResponse> responseEntity = ResponseEntity
+                .ok(jwtResponse);
         StepVerifier
                 .create(result)
                 .expectNext(responseEntity)
                 .verifyComplete();
 
         verify(usersService).saveUser(userRegisterDto);
+        verify(usersService).getUserRoles(user.getId());
+        verify(jwtUtil).generateToken(user.getUsername(), user.getId(), roles);
+        verify(refreshTokenService).createRefreshToken(refreshToken.getUserId());
+        verify(usersService).getUserByUsername(user.getUsername());
+
     }
 
-    @Test
-    void handleValidateJwtToken_WhenTokenIsIncorrect(){
-        //given
-        JwtValidationRequest jwtValidationRequest = new JwtValidationRequest("jwt_token");
-        //when
-
-        //then
-    }
 
 }

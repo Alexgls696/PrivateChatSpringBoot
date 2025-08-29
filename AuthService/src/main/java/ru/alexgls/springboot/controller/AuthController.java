@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.Get;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import org.springframework.web.bind.annotation.*;
@@ -51,24 +52,11 @@ public class AuthController {
     @PostMapping("/login")
     public Mono<ResponseEntity<?>> login(@RequestBody LoginRequest loginRequest) {
         log.info("Login request: username={}", loginRequest.username);
-        Mono<Boolean> checkCredentialsResult = usersService.checkCredentials(loginRequest.username, loginRequest.password);
-        Mono<User> userMono = usersService.getUserByUsername(loginRequest.username);
-        Mono<List<String>> monoRoles = userMono
-                .flatMap(user -> usersService
-                        .getUserRoles(user.getId())
-                        .collect(Collectors.toList()));
-        return Mono.zip(checkCredentialsResult, userMono, monoRoles)
-                .flatMap(tuple -> {
-                    boolean result = tuple.getT1();
-                    User user = tuple.getT2();
-                    List<String> roles = tuple.getT3();
+        Mono<Boolean> checkCredentialsResultMono = usersService.checkCredentials(loginRequest.username, loginRequest.password);
+        return checkCredentialsResultMono
+                .flatMap(result -> {
                     if (result) {
-                        String accessToken = jwtUtil.generateToken(loginRequest.username, user.getId(), roles);
-                        return refreshTokenService.createRefreshToken(user.getId())
-                                .map(refreshToken -> {
-                                    JwtResponse jwtResponse = new JwtResponse(accessToken, refreshToken.getToken());
-                                    return ResponseEntity.ok(jwtResponse);
-                                });
+                        return getLoginResponseByUsername(loginRequest.username);
                     } else {
                         return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                                 .body(Map.of("error", "Неверное имя пользователя или пароль")));
@@ -99,13 +87,10 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public Mono<ResponseEntity<GetUserDto>> register(@RequestBody UserRegisterDto userRegisterDto, UriComponentsBuilder componentsBuilder) {
+    public Mono<ResponseEntity<?>> register(@RequestBody UserRegisterDto userRegisterDto) {
         log.info("Register user: username={} email={}", userRegisterDto.username(), userRegisterDto.email());
         return usersService.saveUser(userRegisterDto)
-                .map(dto -> ResponseEntity
-                        .created(componentsBuilder.replacePath("/auth/register/{id}")
-                                .build(Map.of("id", dto.id())))
-                        .body(dto));
+                .flatMap(dto -> getLoginResponseByUsername(dto.username()));
     }
 
     @PostMapping("/validate")
@@ -113,5 +98,24 @@ public class AuthController {
         log.info("Try to validate token: {}", tokenRequest);
         return ResponseEntity
                 .ok(jwtUtil.validateTokenAndGetJwtValidationResponse(tokenRequest.getToken()));
+    }
+
+    private Mono<ResponseEntity<JwtResponse>> getLoginResponseByUsername(String username) {
+        Mono<User> userMono = usersService.getUserByUsername(username);
+        Mono<List<String>> rolesMono = userMono
+                .flatMap(user -> usersService
+                        .getUserRoles(user.getId())
+                        .collect(Collectors.toList()));
+        return Mono.zip(userMono, rolesMono)
+                .flatMap(tuple -> {
+                    var user = tuple.getT1();
+                    List<String> roles = tuple.getT2();
+                    String accessToken = jwtUtil.generateToken(username, user.getId(), roles);
+                    return refreshTokenService.createRefreshToken(user.getId())
+                            .map(refreshToken -> {
+                                JwtResponse jwtResponse = new JwtResponse(accessToken, refreshToken.getToken());
+                                return ResponseEntity.ok(jwtResponse);
+                            });
+                });
     }
 }
