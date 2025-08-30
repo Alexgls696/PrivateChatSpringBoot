@@ -36,9 +36,11 @@ create table messages
 
 create table attachments(
     attachment_id bigint primary key generated always as identity,
-    message_id integer references messages(message_id),
+    message_id integer references messages(message_id) not null ,
+    chat_id integer references chats(chat_id) not null ,
     file_id bigint,
-    mime_type varchar(256)
+    mime_type varchar(256),
+    logic_type varchar(256)
 );
 
 create index message_type_index ON  messages using hash (message_type);

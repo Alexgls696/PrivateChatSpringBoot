@@ -77,9 +77,7 @@ public class ChatsController {
         log.info("Find user by chat id: {}", chatId);
 
         return chatsService.findRecipientIdByChatId(chatId, userId)
-                .flatMap(recipientId -> {
-                    return authWebClient.findUserById(recipientId, token);
-                }).map(user->{
+                .flatMap(recipientId -> authWebClient.findUserById(recipientId, token)).map(user->{
                     log.info("Found user: {}", user);
                     return user;
                 });

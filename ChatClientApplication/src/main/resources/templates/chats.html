@@ -22,9 +22,31 @@
     <div class="chat-wrapper">
         <ul id="chatList" class="chat-list"></ul>
         <section id="chatWindow" class="chat-window hidden">
+            <div id="attachmentsModal" class="modal hidden">
+                <div class="modal-content attachments-modal">
+                    <header class="modal-header">
+                        <h2>Вложения</h2>
+                        <button id="closeAttachmentsBtn" class="close-btn" title="Закрыть">×</button>
+                    </header>
+
+                    <div class="attachments-tabs">
+                        <button data-type="IMAGE" class="tab-btn active">Изображения</button>
+                        <button data-type="VIDEO" class="tab-btn">Видео</button>
+                        <button data-type="AUDIO" class="tab-btn">Аудио</button>
+                        <button data-type="FILE" class="tab-btn">Файлы</button>
+                    </div>
+
+                    <div id="attachmentsContent" class="attachments-content">
+                        <!-- Загрузчик / вложения -->
+                    </div>
+                </div>
+            </div>
+
+
             <header class="chat-window__header">
                 <button id="closeChatBtn" class="close-btn" title="Закрыть чат">×</button>
                 <h2 id="chatTitle">Чат</h2>
+                <button id="attachmentsBtn" class="attachments-btn" title="Вложения">Вложения 📂</button>
             </header>
             <div id="messages" class="messages">
                 <p class="placeholder">Выберите чат, чтобы начать общение</p>

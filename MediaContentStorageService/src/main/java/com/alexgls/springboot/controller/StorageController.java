@@ -1,6 +1,5 @@
 package com.alexgls.springboot.controller;
 
-import com.alexgls.springboot.dto.CreateFileResponse;
 import com.alexgls.springboot.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

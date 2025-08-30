@@ -76,7 +76,7 @@ public class MessagesService {
                                 savedMessage.setRecipientId(recipientId);
                                 Mono<Void> updateLastMessageInChatMono = chatsService.updateLastMessageToChat(createMessagePayload.chatId(), savedMessage.getId());
                                 return updateLastMessageInChatMono
-                                        .then(Mono.defer(() -> saveAttachmentsPayloadsToDatabase(createMessagePayload.attachments(), savedMessage.getId())))
+                                        .then(Mono.defer(() -> saveAttachmentsPayloadsToDatabase(createMessagePayload.attachments(), savedMessage.getId(), createMessagePayload.chatId())))
                                         .map(savedAttachments -> {
                                             MessageDto dto = MessageMapper.toMessageDto(savedMessage);
                                             dto.setAttachments(savedAttachments);
@@ -101,7 +101,7 @@ public class MessagesService {
         return message;
     }
 
-    private Mono<List<Attachment>> saveAttachmentsPayloadsToDatabase(List<CreateAttachmentPayload> attachmentPayloads, long messageId) {
+    private Mono<List<Attachment>> saveAttachmentsPayloadsToDatabase(List<CreateAttachmentPayload> attachmentPayloads, long messageId, int chatId) {
         if (attachmentPayloads == null || attachmentPayloads.isEmpty()) {
             return Mono.just(Collections.emptyList());
         }
@@ -112,10 +112,13 @@ public class MessagesService {
                     attachment.setMessageId(messageId);
                     attachment.setFileId(payload.fileId());
                     attachment.setMimeType(payload.mimeType());
+                    attachment.setChatId(chatId);
+                    attachment.setLogicType(MessageType.fromMimeType(payload.mimeType()));
                     return attachment;
                 }).toList();
 
-        return attachmentRepository.saveAll(attachments).collectList();
+        return attachmentRepository.saveAll(attachments)
+                .collectList();
     }
 
     public Mono<Void> deleteById(long id) {

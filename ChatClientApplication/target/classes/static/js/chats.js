@@ -18,6 +18,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const attachFileBtn = document.getElementById('attachFileBtn');
     const fileInput = document.getElementById('fileInput');
     const attachmentPreviewContainer = document.getElementById('attachmentPreviewContainer');
+
+    const attachmentsBtn = document.getElementById("attachmentsBtn");
+    const attachmentsModal = document.getElementById("attachmentsModal");
+    const closeAttachmentsBtn = document.getElementById("closeAttachmentsBtn");
+    const attachmentsTabs = document.querySelectorAll(".attachments-tabs .tab-btn");
+    const attachmentsContent = document.getElementById("attachmentsContent");
     let pendingAttachments = [];
 
 
@@ -581,6 +587,75 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    //Загрузка вложений
+    async function loadAttachments(type) {
+        // Рисуем скелетон
+        if (type === "IMAGE" || type === "VIDEO") {
+            attachmentsContent.innerHTML = `
+      <div class="skeleton-grid">
+        ${Array(12).fill('<div class="skeleton skeleton-tile"></div>').join("")}
+      </div>`;
+        } else {
+            attachmentsContent.innerHTML = `
+      <div class="skeleton-list">
+        ${Array(6).fill('<div class="skeleton skeleton-row"></div>').join("")}
+      </div>`;
+        }
+
+        try {
+            const url = `http://localhost:8087/api/attachments/find-by-type-and-chat-id?mediaType=${type}&chatId=${activeChatId}`;
+            const attachments = await apiFetch(url);
+
+            if (!attachments || attachments.length === 0) {
+                attachmentsContent.innerHTML = "<p>Нет вложений в этой категории</p>";
+                return;
+            }
+
+            const items = await Promise.all(attachments.map(async att => {
+                const getLinkUrl = `${API_STORAGE_URL}/download/by-id?id=${att.fileId}`;
+                try {
+                    const realDownloadUrl = await apiFetch(getLinkUrl);
+                    console.log(att);
+                    console.log(realDownloadUrl);
+
+                    if (type === "IMAGE") {
+                        return `<div class="attachment-item">
+                    <a href="${realDownloadUrl.href}" target="_blank">
+                      <img src="${realDownloadUrl.href}" alt="Изображение">
+                    </a>
+                  </div>`;
+                    } else if (type === "VIDEO") {
+                        return `<div class="attachment-item">
+                    <video src="${realDownloadUrl.href}" controls></video>
+                  </div>`;
+                    } else if (type === "AUDIO") {
+                        return `<div class="attachment-list-item">
+                    <audio controls src="${realDownloadUrl.href}"></audio>
+                    <a href="${realDownloadUrl.href}" download>Скачать</a>
+                  </div>`;
+                    } else {
+                        return `<div class="attachment-list-item">
+                    <span>${att.mimeType || "Файл"}</span>
+                    <a href="${realDownloadUrl.href}" download>Скачать</a>
+                  </div>`;
+                    }
+                } catch {
+                    return `<div class="attachment-list-item error">Ошибка загрузки файла</div>`;
+                }
+            }));
+
+            // Отображаем грид или список
+            if (type === "IMAGE" || type === "VIDEO") {
+                attachmentsContent.innerHTML = `<div class="attachments-grid">${items.join("")}</div>`;
+            } else {
+                attachmentsContent.innerHTML = `<div class="attachments-list">${items.join("")}</div>`;
+            }
+        } catch (e) {
+            console.error("Ошибка загрузки вложений:", e);
+            attachmentsContent.innerHTML = "<p>Не удалось загрузить вложения</p>";
+        }
+    }
+
     // --- Обработчики событий ---
 
     closeChatBtn.addEventListener('click', () => {
@@ -654,6 +729,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     logoutBtn.addEventListener('click', () => {
         window.location.href = '/logout';
+    });
+
+    //Вложения
+    attachmentsBtn.addEventListener("click", () => {
+        if (!activeChatId) return;
+        attachmentsModal.classList.remove("hidden");
+        loadAttachments("IMAGE"); // по умолчанию картинки
+    });
+
+    closeAttachmentsBtn.addEventListener("click", () => {
+        attachmentsModal.classList.add("hidden");
+    });
+
+    attachmentsTabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+            attachmentsTabs.forEach(t => t.classList.remove("active"));
+            tab.classList.add("active");
+            loadAttachments(tab.dataset.type);
+        });
     });
 
     // =================================================================

@@ -142,7 +142,7 @@ body {
     padding: 15px 20px;
     border-bottom: 1px solid #eee;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     background-color: #f7f7f7;
     border-radius: 8px 8px 0 0;
@@ -637,6 +637,202 @@ body {
 .attachment-preview-container:empty + .message-form {
     border-radius: 0 0 8px 8px;
 }
+
+/*Вложения */
+.attachments-btn {
+    background: none;
+    border: none;
+    font-size: 1.2em;
+    cursor: pointer;
+}
+
+/* ====== МОДАЛЬНОЕ ОКНО ====== */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(30, 30, 30, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content.attachments-modal {
+    width: 80vw;
+    height: 80vh;
+    background: #fff;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+    from {opacity: 0; transform: scale(0.9);}
+    to {opacity: 1; transform: scale(1);}
+}
+
+/* ====== ШАПКА ОКНА ====== */
+.modal-header {
+    padding: 15px 20px;
+    background: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.close-btn {
+    font-size: 20px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.close-btn:hover {
+    transform: scale(1.2);
+    color: #e74c3c;
+}
+
+/* ====== ТАБЫ ====== */
+.attachments-tabs {
+    display: flex;
+    border-bottom: 1px solid #eee;
+    background: #fafafa;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s, color 0.2s;
+}
+
+.tab-btn:hover {
+    background: #f0f0f0;
+}
+
+.tab-btn.active {
+    color: #2c7be5;
+    border-bottom: 2px solid #2c7be5;
+    background: #fff;
+}
+
+/* ====== КОНТЕНТ ====== */
+.attachments-content {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    background: #fafafa;
+}
+
+/* Грид для картинок и видео */
+.attachments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+.attachment-item img,
+.attachment-item video {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 10px;
+    background: #eaeaea;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.attachment-item img:hover,
+.attachment-item video:hover {
+    transform: scale(1.05);
+}
+
+/* Список для файлов и аудио */
+.attachments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.attachment-list-item {
+    background: #fff;
+    border-radius: 10px;
+    padding: 12px 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    font-size: 14px;
+}
+
+.attachment-list-item a {
+    color: #2c7be5;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.attachment-list-item a:hover {
+    text-decoration: underline;
+}
+
+/* ====== СКЕЛЕТОН ====== */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.2s infinite;
+    border-radius: 10px;
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Скелетон для гридов */
+.skeleton-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+.skeleton-tile {
+    width: 100%;
+    height: 120px;
+}
+
+/* Скелетон для списков */
+.skeleton-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.skeleton-row {
+    height: 40px;
+    width: 100%;
+}
+
 
 @media (max-width: 768px) {
     .container {

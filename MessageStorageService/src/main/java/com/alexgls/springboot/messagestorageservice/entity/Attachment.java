@@ -20,9 +20,15 @@ public class Attachment {
     @Column(value = "message_id")
     private Long messageId;
 
+    @Column(value = "chat_id")
+    private Integer chatId;
+
     @Column(value = "file_id")
     private Long fileId;
 
     @Column(value = "mime_type")
     private String mimeType;
+
+    @Column(value = "logic_type")
+    private MessageType logicType;
 }
