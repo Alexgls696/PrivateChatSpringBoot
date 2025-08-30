@@ -2,6 +2,7 @@ package com.alexgls.springboot.messagestorageservice.repository;
 
 import com.alexgls.springboot.messagestorageservice.entity.Chat;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
@@ -46,6 +47,10 @@ public interface ChatsRepository extends ReactiveCrudRepository<Chat, Integer> {
 
     @Query(value = "select p.user_id from participants p join public.chats c on p.chat_id = c.chat_id where c.chat_id = :chatId and user_id != :senderId and is_group = true")
     Flux<Integer>findRecipientIdsByChatId(@Param("chatId") int chatId, @Param("senderId") int senderId);
+
+    @Modifying
+    @Query(value = "update chats set last_message_id = :lastMessageId where chat_id = :chatId")
+    Mono<Void>updateLastMessageId(@Param("chatId") int chatId, @Param("lastMessageId") long lastMessageId);
 
 
 }

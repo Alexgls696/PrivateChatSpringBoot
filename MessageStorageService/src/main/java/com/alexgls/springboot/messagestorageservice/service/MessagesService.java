@@ -1,15 +1,13 @@
 package com.alexgls.springboot.messagestorageservice.service;
 
-import com.alexgls.springboot.messagestorageservice.dto.CreateAttachmentPayload;
-import com.alexgls.springboot.messagestorageservice.dto.CreateMessagePayload;
-import com.alexgls.springboot.messagestorageservice.dto.CreatedMessageDto;
-import com.alexgls.springboot.messagestorageservice.dto.ReadMessagePayload;
+import com.alexgls.springboot.messagestorageservice.dto.*;
 import com.alexgls.springboot.messagestorageservice.entity.Attachment;
 import com.alexgls.springboot.messagestorageservice.entity.Chat;
 import com.alexgls.springboot.messagestorageservice.entity.Message;
 import com.alexgls.springboot.messagestorageservice.entity.MessageType;
 import com.alexgls.springboot.messagestorageservice.exceptions.NoSuchRecipientException;
 import com.alexgls.springboot.messagestorageservice.exceptions.NoSuchUsersChatException;
+import com.alexgls.springboot.messagestorageservice.mapper.MessageMapper;
 import com.alexgls.springboot.messagestorageservice.repository.AttachmentRepository;
 import com.alexgls.springboot.messagestorageservice.repository.MessagesRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,11 +19,9 @@ import reactor.core.publisher.Mono;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.function.Consumer;
 
 @Service
 @RequiredArgsConstructor
@@ -59,29 +55,15 @@ public class MessagesService {
                 .count();
     }
 
-    private CreatedMessageDto createMessageDto(Message message) {
-        CreatedMessageDto createdMessageDto = new CreatedMessageDto();
-        createdMessageDto.setCreatedAt(message.getCreatedAt());
-        createdMessageDto.setId(message.getId());
-        createdMessageDto.setChatId(message.getChatId());
-        createdMessageDto.setSenderId(message.getSenderId());
-        createdMessageDto.setRecipientId(message.getRecipientId());
-        createdMessageDto.setContent(message.getContent());
-        createdMessageDto.setRead(message.isRead());
-        createdMessageDto.setReadAt(message.getReadAt());
-        return createdMessageDto;
-    }
-
 
     @Transactional
-    public Mono<CreatedMessageDto> save(CreateMessagePayload createMessagePayload) {
+    public Mono<MessageDto> save(CreateMessagePayload createMessagePayload) {
         return chatsService.existsById(createMessagePayload.chatId())
                 .filter(Boolean::booleanValue)
                 .switchIfEmpty(Mono.error(new NoSuchUsersChatException("Chat with id " + createMessagePayload.chatId() + " not found")))
                 .then(Mono.defer(() -> {
                     Message message = createMessageFromPayload(createMessagePayload);
                     Mono<Message> savedMessageMono = messagesRepository.save(message);
-
                     Mono<Integer> recipientIdMono = chatsService.findRecipientIdByChatId(
                             createMessagePayload.chatId(),
                             createMessagePayload.senderId()
@@ -92,10 +74,11 @@ public class MessagesService {
                                 Message savedMessage = tuple.getT1();
                                 Integer recipientId = tuple.getT2();
                                 savedMessage.setRecipientId(recipientId);
-
-                                return saveAttachmentsPayloadsToDatabase(createMessagePayload.attachments(), savedMessage.getId())
+                                Mono<Void> updateLastMessageInChatMono = chatsService.updateLastMessageToChat(createMessagePayload.chatId(), savedMessage.getId());
+                                return updateLastMessageInChatMono
+                                        .then(Mono.defer(() -> saveAttachmentsPayloadsToDatabase(createMessagePayload.attachments(), savedMessage.getId())))
                                         .map(savedAttachments -> {
-                                            CreatedMessageDto dto = createMessageDto(savedMessage);
+                                            MessageDto dto = MessageMapper.toMessageDto(savedMessage);
                                             dto.setAttachments(savedAttachments);
                                             dto.setType(message.getType());
                                             return dto;
@@ -138,4 +121,5 @@ public class MessagesService {
     public Mono<Void> deleteById(long id) {
         return messagesRepository.deleteById(id);
     }
+
 }

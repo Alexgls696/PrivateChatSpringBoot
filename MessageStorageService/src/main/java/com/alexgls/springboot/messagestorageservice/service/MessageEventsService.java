@@ -1,6 +1,6 @@
 package com.alexgls.springboot.messagestorageservice.service;
 
-import com.alexgls.springboot.messagestorageservice.dto.CreatedMessageDto;
+import com.alexgls.springboot.messagestorageservice.dto.MessageDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -14,11 +14,11 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class MessageEventsService {
 
-    private final KafkaTemplate<String, CreatedMessageDto> kafkaTemplate;
+    private final KafkaTemplate<String, MessageDto> kafkaTemplate;
 
-    public void sendMessage(CreatedMessageDto createdMessageDto) {
+    public void sendMessage(MessageDto createdMessageDto) {
         log.info("Try to sending message to kafka: {}", createdMessageDto);
-        CompletableFuture<SendResult<String, CreatedMessageDto>> future = kafkaTemplate
+        CompletableFuture<SendResult<String, MessageDto>> future = kafkaTemplate
                 .send("events-message-created", createdMessageDto).toCompletableFuture();
         future.whenComplete((result, throwable) -> {
             if (throwable != null) {

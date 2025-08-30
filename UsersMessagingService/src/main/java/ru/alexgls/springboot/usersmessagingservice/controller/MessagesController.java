@@ -2,7 +2,7 @@ package ru.alexgls.springboot.usersmessagingservice.controller;
 
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import ru.alexgls.springboot.usersmessagingservice.dto.CreatedMessageDto;
+import ru.alexgls.springboot.usersmessagingservice.dto.MessageDto;
 import ru.alexgls.springboot.usersmessagingservice.dto.ReadMessagePayload;
 import ru.alexgls.springboot.usersmessagingservice.service.MessagingService;
 import ru.alexgls.springboot.usersmessagingservice.dto.ChatMessage;
@@ -15,7 +15,6 @@ import org.springframework.stereotype.Controller;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 
 @Controller
@@ -33,7 +32,7 @@ public class MessagesController {
     }
 
     @KafkaListener(topics = "events-message-created", groupId = "event-message-group", containerFactory = "kafkaMessageListenerContainerFactory")
-    public void listen(CreatedMessageDto createdMessageDto) {
+    public void listen(MessageDto createdMessageDto) {
         log.info("Received message, which was saved to database: {}", createdMessageDto);
         log.info("Try to send message to client: {}", createdMessageDto);
         messagingTemplate.convertAndSendToUser(String.valueOf(createdMessageDto.getRecipientId()), "/queue/messages", createdMessageDto);

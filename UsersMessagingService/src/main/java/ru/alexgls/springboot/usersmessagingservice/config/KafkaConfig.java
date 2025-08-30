@@ -13,12 +13,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.*;
 import org.springframework.kafka.support.serializer.JsonSerializer;
-import ru.alexgls.springboot.usersmessagingservice.dto.CreatedMessageDto;
+import ru.alexgls.springboot.usersmessagingservice.dto.MessageDto;
 import ru.alexgls.springboot.usersmessagingservice.dto.ReadMessagePayload;
 
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Configuration
@@ -54,20 +53,20 @@ public class KafkaConfig {
     }
 
     @Bean
-    public ConsumerFactory<String, CreatedMessageDto> messageConsumerFactory() {
+    public ConsumerFactory<String, MessageDto> messageConsumerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:29092");
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-        JsonDeserializer<CreatedMessageDto> jsonDeserializer = new JsonDeserializer<>(CreatedMessageDto.class);
+        JsonDeserializer<MessageDto> jsonDeserializer = new JsonDeserializer<>(MessageDto.class);
         jsonDeserializer.addTrustedPackages("/**");
         jsonDeserializer.setUseTypeHeaders(false);
         return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), jsonDeserializer);
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, CreatedMessageDto> kafkaMessageListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, CreatedMessageDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
+    public ConcurrentKafkaListenerContainerFactory<String, MessageDto> kafkaMessageListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, MessageDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(messageConsumerFactory());
         return factory;
     }

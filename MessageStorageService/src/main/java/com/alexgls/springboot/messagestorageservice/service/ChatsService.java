@@ -1,9 +1,12 @@
 package com.alexgls.springboot.messagestorageservice.service;
 
 import com.alexgls.springboot.messagestorageservice.dto.ChatDto;
+import com.alexgls.springboot.messagestorageservice.dto.MessageDto;
 import com.alexgls.springboot.messagestorageservice.entity.Chat;
 import com.alexgls.springboot.messagestorageservice.entity.Message;
 import com.alexgls.springboot.messagestorageservice.entity.Participants;
+import com.alexgls.springboot.messagestorageservice.mapper.ChatMapper;
+import com.alexgls.springboot.messagestorageservice.mapper.MessageMapper;
 import com.alexgls.springboot.messagestorageservice.repository.ChatsRepository;
 import com.alexgls.springboot.messagestorageservice.repository.MessagesRepository;
 import com.alexgls.springboot.messagestorageservice.repository.ParticipantsRepository;
@@ -34,13 +37,13 @@ public class ChatsService {
         return chatsRepository.findChatsByUserId(userId, limit, offset)
                 .flatMap(chat -> {
                     log.info("Chat {}", chat);
-                    ChatDto chatDto = convertToDto(chat);
+                    ChatDto chatDto = ChatMapper.toDto(chat);
                     Mono<Message> lastMessageInChat = messagesRepository.findLastMessageByChatId(chat.getChatId());
                     return Mono.zip(Mono.just(chatDto), lastMessageInChat)
                             .flatMap(tuple -> {
                                 ChatDto chatdto = tuple.getT1();
-                                Message lastMessage = tuple.getT2();
-                                chatdto.setLastMessage(lastMessage);
+                                MessageDto lastMessageDto = MessageMapper.toMessageDto(tuple.getT2());
+                                chatdto.setLastMessage(lastMessageDto);
                                 return Mono.just(chatdto);
                             });
                 });
@@ -51,7 +54,7 @@ public class ChatsService {
         return chatsRepository.findChatIdByParticipantsIdForPrivateChats(senderId, receiverId)
                 .flatMap(existingChatId -> {
                     Mono<Chat> chatMono = chatsRepository.findById(existingChatId);
-                    return chatMono.map(this::convertToDto);
+                    return chatMono.map(ChatMapper::toDto);
                 })
                 .switchIfEmpty(Mono.defer(() -> {
                     Chat newChat = new Chat();
@@ -69,20 +72,9 @@ public class ChatsService {
                                 p2.setJoinedAt(Timestamp.from(Instant.now()));
 
                                 return participantsRepository.saveAll(List.of(p1, p2))
-                                        .then(Mono.just(convertToDto(savedChat)));
+                                        .then(Mono.just(ChatMapper.toDto(savedChat)));
                             });
                 }));
-    }
-
-    private ChatDto convertToDto(Chat chat) {
-        ChatDto chatDto = new ChatDto();
-        chatDto.setName(chat.getName());
-        chatDto.setType(chat.getType());
-        chatDto.setGroup(chat.isGroup());
-        chatDto.setCreatedAt(chat.getCreatedAt());
-        chatDto.setUpdatedAt(chat.getUpdatedAt());
-        chatDto.setChatId(chat.getChatId());
-        return chatDto;
     }
 
     public Mono<Boolean> existsById(Integer id) {
@@ -91,7 +83,17 @@ public class ChatsService {
 
     public Mono<ChatDto> findById(int id) {
         return chatsRepository.findById(id)
-                .map(this::convertToDto);
+                .flatMap(chat -> {
+                    ChatDto chatDto = ChatMapper.toDto(chat);
+                    Mono<Message> messageMono = messagesRepository.findLastMessageByChatId(chat.getChatId());
+                    return Mono.zip(Mono.just(chatDto), messageMono)
+                            .map(tuple -> {
+                                var chat_dto = tuple.getT1();
+                                var messageDto = MessageMapper.toMessageDto(tuple.getT2());
+                                chat_dto.setLastMessage(messageDto);
+                                return chat_dto;
+                            });
+                });
     }
 
     public Mono<Integer> findRecipientIdByChatId(int chatId, int senderId) {
@@ -100,6 +102,10 @@ public class ChatsService {
 
     public Flux<Integer> findRecipientIdsByChatId(int chatId, int senderId) {
         return chatsRepository.findRecipientIdsByChatId(chatId, senderId);
+    }
+
+    public Mono<Void>updateLastMessageToChat(int chatId, long messageId){
+        return chatsRepository.updateLastMessageId(chatId,messageId);
     }
 
 }

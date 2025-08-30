@@ -1,13 +1,11 @@
 package com.alexgls.springboot.messagestorageservice.kafka;
 
 import com.alexgls.springboot.messagestorageservice.dto.CreateMessagePayload;
-import com.alexgls.springboot.messagestorageservice.dto.CreatedMessageDto;
+import com.alexgls.springboot.messagestorageservice.dto.MessageDto;
 import com.alexgls.springboot.messagestorageservice.dto.ReadMessagePayload;
 import com.alexgls.springboot.messagestorageservice.dto.UpdateMessagePayload;
-import com.alexgls.springboot.messagestorageservice.entity.Message;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -20,7 +18,6 @@ import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Configuration
@@ -68,12 +65,12 @@ public class KafkaConfiguration {
     }
 
     @Bean
-    public ProducerFactory<String, CreatedMessageDto> messageProducerFactory() {
+    public ProducerFactory<String, MessageDto> messageProducerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:29092");
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-        JsonSerializer<CreatedMessageDto> jsonSerializer = new JsonSerializer<>();
+        JsonSerializer<MessageDto> jsonSerializer = new JsonSerializer<>();
         return new DefaultKafkaProducerFactory<>(props, new StringSerializer(), jsonSerializer);
     }
 
@@ -88,7 +85,7 @@ public class KafkaConfiguration {
     }
 
     @Bean
-    public KafkaTemplate<String, CreatedMessageDto> kafkaTemplate() {
+    public KafkaTemplate<String, MessageDto> kafkaTemplate() {
         return new KafkaTemplate<>(messageProducerFactory());
     }
 
