@@ -36,4 +36,6 @@ public class MessageDto {
     private MessageType type;
 
     private List<Attachment> attachments;
+
+    private String tempId;
 }

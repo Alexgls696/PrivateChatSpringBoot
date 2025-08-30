@@ -40,7 +40,7 @@ class ChatsControllerTest {
     void handleGetChatById() {
         //given
         int chatId = 1;
-        MessageDto lastMessage = new MessageDto(1L,chatId,1,2,"content",Timestamp.from(Instant.now().minusSeconds(1000)),null,false,null, MessageType.TEXT,null);
+        MessageDto lastMessage = new MessageDto(1L,chatId,1,2,"content",Timestamp.from(Instant.now().minusSeconds(1000)),null,false,null, MessageType.TEXT,null,"test");
         ChatDto chatDto = new ChatDto(chatId,null,false,"PRIVATE",Timestamp.from(Instant.now()),null, lastMessage);
         when(chatsService.findById(chatId)).thenReturn(Mono.just(chatDto));
         //when

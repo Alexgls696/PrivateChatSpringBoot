@@ -6,6 +6,7 @@ public record CreateMessagePayload(
         Integer chatId,
         int senderId,
         String content,
-        List<CreateAttachmentPayload> attachments
+        List<CreateAttachmentPayload> attachments,
+        String tempId
 ) {
 }

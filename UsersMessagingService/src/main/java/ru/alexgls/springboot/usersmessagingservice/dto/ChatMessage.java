@@ -13,4 +13,5 @@ public class ChatMessage {
     private String chatId;
     private String content;
     private List<CreateAttachmentPayload> attachments;
+    private String tempId;
 }

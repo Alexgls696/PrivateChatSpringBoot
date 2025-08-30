@@ -28,7 +28,8 @@ public class MessagingService {
                 Integer.parseInt(message.getChatId()),
                 Integer.parseInt(principal.getName()),
                 message.getContent(),
-                attachments
+                attachments,
+                message.getTempId()
         );
         CompletableFuture<SendResult<String, CreateMessagePayload>> futureResult = createMessageKafkaTemplate.send("messaging-topic", payload).toCompletableFuture();
         futureResult.whenComplete((result, throwable) -> {

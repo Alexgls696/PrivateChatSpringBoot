@@ -81,6 +81,7 @@ public class MessagesService {
                                             MessageDto dto = MessageMapper.toMessageDto(savedMessage);
                                             dto.setAttachments(savedAttachments);
                                             dto.setType(message.getType());
+                                            dto.setTempId(createMessagePayload.tempId());
                                             return dto;
                                         });
                             });
