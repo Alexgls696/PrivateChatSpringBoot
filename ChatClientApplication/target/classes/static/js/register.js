@@ -3,6 +3,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const registerButton = document.getElementById('register-button');
     const messageBox = document.getElementById('message-box');
 
+    const gatewayHost = window.location.hostname; // 'localhost'
+    const gatewayPort = 8080; // Порт вашего Gateway
+    const gatewayAddress = `${gatewayHost}:${gatewayPort}`;
+
+    const httpProtocol = 'http:'; // Для локальной разработки
+    const API_BASE_URL = `${httpProtocol}//${gatewayAddress}`; // Базовый URL для всех REST API
+
     form.addEventListener('submit', async (event) => {
         // Предотвращаем стандартную отправку формы
         event.preventDefault();
@@ -28,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             // Отправляем POST-запрос на сервер
-            const response = await fetch('http://localhost:8085/auth/register', {
+            const response = await fetch(`${API_BASE_URL}/auth/register`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -9,15 +9,17 @@
         <outputRelativeToContentRoot value="true" />
         <module name="MessageStorageService" />
         <module name="UsersMessagingService" />
-        <module name="InDatabaseContentStorageService" />
         <module name="RatingLogClientApplication" />
-        <module name="MediaContentStorageService" />
+        <module name="ApiGatewayService" />
         <module name="AuthService" />
+        <module name="InDatabaseContentStorageService" />
+        <module name="MediaContentStorageService" />
       </profile>
     </annotationProcessing>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="ApiGatewayService" options="-parameters" />
       <module name="AuthService" options="-parameters" />
       <module name="InDatabaseContentStorageService" options="-parameters" />
       <module name="MediaContentStorageService" options="-parameters" />

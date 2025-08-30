@@ -38,26 +38,13 @@ public class MediaContentSecurityConfig {
     public SecurityFilterChain securityWebFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(exchange -> exchange
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(server -> server.jwt(jwt -> jwt
                         .jwkSetUri(jwkSetUri)
                         .jwtAuthenticationConverter(jwtAuthenticationConverter())))
                 .build();
-    }
-
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.addAllowedOrigin(frontendUrl);
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept","X-Frame-Options", "SAMEORIGIN"));
-        config.setAllowCredentials(true);
-        config.setMaxAge(3600L);
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        return source;
     }
 
     @Bean

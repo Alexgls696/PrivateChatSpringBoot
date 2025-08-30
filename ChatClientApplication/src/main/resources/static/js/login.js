@@ -6,7 +6,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
 
-    const AUTH_API_URL = 'http://localhost:8085/auth/login';
+
+    const gatewayHost = window.location.hostname; // 'localhost'
+    const gatewayPort = 8080; // Порт вашего Gateway
+    const gatewayAddress = `${gatewayHost}:${gatewayPort}`;
+
+    const httpProtocol = 'http:'; // Для локальной разработки
+    const API_BASE_URL = `${httpProtocol}//${gatewayAddress}`; // Базовый URL для всех REST API
 
     loginForm.addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -19,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loginButton.textContent = 'Вход...';
 
         try {
-            const response = await fetch(AUTH_API_URL, {
+            const response = await fetch(`${API_BASE_URL}/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

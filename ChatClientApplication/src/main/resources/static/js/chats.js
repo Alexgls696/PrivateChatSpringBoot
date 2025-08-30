@@ -39,11 +39,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let isChatsLoading = false;
     let hasMoreChats = true;
 
-    const API_URL = 'http://localhost:8086'; // URL для WebSocket
-    const API_FETCH_URL = 'http://localhost:8087'; // URL для REST API
-    const API_USERS_URL = 'http://localhost:8085/api'; // REST API пользователей
-    const API_STORAGE_URL = 'http://localhost:8088/api/storage'; //URL хранилища
+    const gatewayHost = window.location.hostname; // 'localhost'
+    const gatewayPort = 8080; // Порт вашего Gateway
+    const gatewayAddress = `${gatewayHost}:${gatewayPort}`;
 
+    const httpProtocol = 'http:'; // Для локальной разработки
+
+    const API_BASE_URL = `${httpProtocol}//${gatewayAddress}`;
+
+    const WEB_SOCKET_API_URL = 'http://localhost:8086';
 
     const chatManager = {
         stompClient: null,
@@ -56,7 +60,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (this.isConnected || this.isConnecting) return;
             this.connect();
         },
-
         connect: function () {
             this.isConnecting = true;
             const accessToken = localStorage.getItem('accessToken');
@@ -64,8 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 statusEl.textContent = "Ошибка: токен доступа не найден. Пожалуйста, войдите снова.";
                 return;
             }
-
-            const socket = new SockJS(`${API_URL}/ws-chat?token=${accessToken}`);
+            const socket = new SockJS(`${WEB_SOCKET_API_URL}/ws-chat?token=${accessToken}`);
             this.stompClient = Stomp.over(socket);
             this.stompClient.debug = null;
 
@@ -195,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
             chatListEl.prepend(existingChatItemEl);
         } else {
             try {
-                const newChatDto = await apiFetch(`${API_FETCH_URL}/api/chats/${chatId}`);
+                const newChatDto = await apiFetch(`${API_BASE_URL}/api/chats/${chatId}`);
                 const newChatItemEl = await createChatItem(newChatDto);
                 chatListEl.prepend(newChatItemEl);
 
@@ -230,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
         userListContainer.innerHTML = '<p class="placeholder">Загрузка пользователей...</p>';
         userSearchModal.classList.remove('hidden');
         try {
-            const users = await apiFetch(`${API_USERS_URL}/users`);
+            const users = await apiFetch(`${API_BASE_URL}/api/users`);
             renderUsers(users);
         } catch (error) {
             userListContainer.innerHTML = `<p class="placeholder">Ошибка загрузки пользователей: ${error.message}</p>`;
@@ -251,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
         isChatsLoading = true;
 
         try {
-            const data = await apiFetch(`${API_FETCH_URL}/api/chats/find-by-id/${chatListPage}`);
+            const data = await apiFetch(`${API_BASE_URL}/api/chats/find-by-id/${chatListPage}`);
             statusEl.textContent = '';
             if (Array.isArray(data) && data.length > 0) {
                 const chatItemsPromises = data.map(chat => createChatItem(chat));
@@ -288,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!chat.group) {
             try {
-                const recipient = await apiFetch(`${API_FETCH_URL}/api/chats/find-recipient-by-private-chat-id/${chat.chatId}`);
+                const recipient = await apiFetch(`${API_BASE_URL}/api/chats/find-recipient-by-private-chat-id/${chat.chatId}`);
                 const titleDiv = li.querySelector('.chat-title');
                 if (titleDiv) {
                     titleDiv.textContent = `${recipient.name} ${recipient.surname}`;
@@ -323,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         console.log('Отправка на прочтение:', payload);
         try {
-            await apiFetch(`${API_FETCH_URL}/api/messages/read-messages`, {
+            await apiFetch(`${API_BASE_URL}/api/messages/read-messages`, {
                 method: 'POST',
                 body: JSON.stringify(payload)
             });
@@ -357,10 +359,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (chat.group) {
                         chatTitleEl.textContent = chat.name;
                     } else {
-                        const recipient = await apiFetch(`${API_FETCH_URL}/api/chats/find-recipient-by-private-chat-id/${chat.chatId}`);
+                        const recipient = await apiFetch(`${API_BASE_URL}/api/chats/find-recipient-by-private-chat-id/${chat.chatId}`);
                         chatTitleEl.textContent = `Чат с ${recipient.name} ${recipient.surname}`;
                     }
-                    const participants = await apiFetch(`${API_FETCH_URL}/api/chats/${chat.chatId}/participants`);
+                    const participants = await apiFetch(`${API_BASE_URL}/api/chats/${chat.chatId}/participants`);
                     participants.forEach(p => {
                         participantCache[p.id] = `${p.name} ${p.surname}`;
                     });
@@ -390,7 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isLoading || !hasMoreMessages) return [];
         isLoading = true;
         try {
-            const data = await apiFetch(`${API_FETCH_URL}/api/messages?chatId=${chatId}&page=${page}&size=${pageSize}`);
+            const data = await apiFetch(`${API_BASE_URL}/api/messages?chatId=${chatId}&page=${page}&size=${pageSize}`);
             if (!Array.isArray(data) || data.length < pageSize) {
                 hasMoreMessages = false;
             }
@@ -437,7 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
             attachmentsHtml = '<div class="attachments-container">';
 
             const attachmentItemsHtml = await Promise.all(msg.attachments.map(async (att) => {
-                const getLinkUrl = `${API_STORAGE_URL}/download/by-id?id=${att.fileId}`;
+                const getLinkUrl = `${API_BASE_URL}/api/storage/download/by-id?id=${att.fileId}`;
 
                 try {
                     const realDownloadUrl = await apiFetch(getLinkUrl);
@@ -539,7 +541,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function startChatWithUser(user) {
         console.log(`Попытка начать чат с пользователем ID: ${user.id}`);
         try {
-            const chat = await apiFetch(`${API_FETCH_URL}/api/chats/private/${user.id}`, {
+            const chat = await apiFetch(`${API_BASE_URL}/api/chats/private/${user.id}`, {
                 method: 'POST',
             });
 
@@ -616,7 +618,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const url = `http://localhost:8087/api/attachments/find-by-type-and-chat-id?mediaType=${type}&chatId=${activeChatId}`;
+            const url = `${API_BASE_URL}/api/attachments/find-by-type-and-chat-id?mediaType=${type}&chatId=${activeChatId}`;
             const attachments = await apiFetch(url);
 
             if (!attachments || attachments.length === 0) {
@@ -625,7 +627,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const items = await Promise.all(attachments.map(async att => {
-                const getLinkUrl = `${API_STORAGE_URL}/download/by-id?id=${att.fileId}`;
+                const getLinkUrl = `${API_BASE_URL}/api/storage/download/by-id?id=${att.fileId}`;
                 try {
                     const realDownloadUrl = await apiFetch(getLinkUrl);
                     if (type === "IMAGE") {
@@ -791,7 +793,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const formData = new FormData();
                 formData.append('file', att.file);
 
-                const response = await fetch(`${API_STORAGE_URL}/upload`, {
+                const response = await fetch(`${API_BASE_URL}/api/storage/upload`, {
                     method: 'POST',
                     headers: {'Authorization': `Bearer ${localStorage.getItem('accessToken')}`},
                     body: formData
@@ -869,7 +871,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function initializeApp() {
         try {
-            const me = await apiFetch(`${API_USERS_URL}/users/me`);
+            const me = await apiFetch(`${API_BASE_URL}/api/users/me`);
             currentUserId = me.id;
             participantCache[me.id] = `${me.name} ${me.surname}`;
 
